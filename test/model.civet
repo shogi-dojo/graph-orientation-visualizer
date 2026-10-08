@@ -8,7 +8,7 @@
 } from ../src/model.civet
 { EXAMPLES } from ../src/examples.civet
 
-const star: GraphDefinition =
+star: GraphDefinition :=
   id: "star"
   group: "Full graphs"
   title: "Star"
@@ -41,11 +41,11 @@ describe "partial vertex analysis", =>
     expect(constraint.allowed).toEqual([1]);
   );
 
-satisfyingAssignments := (graph: GraphDefinition) =>
-  const solutions: Record<string, 0 | 1>[] = []
+function satisfyingAssignments(graph: GraphDefinition)
+  solutions: Record<string, 0 | 1>[] := []
   directions := emptyDirections(graph)
 
-  search := (edgeIndex: number) =>
+  function search(edgeIndex: number)
     if edgeIndex is graph.edges#
       solutions.push({ ...directions } as Record<string, 0 | 1>)
       return
@@ -56,13 +56,13 @@ satisfyingAssignments := (graph: GraphDefinition) =>
       viable := graph.vertices.every(
         (vertex) => analyzeVertex(graph, directions, vertex).state is not "impossible"
       )
-      if (viable) search(edgeIndex + 1)
+      search(edgeIndex + 1) if viable
     directions[edge.id] = null;
 
   search 0
   return solutions
 
-boundaryMask := (graph: GraphDefinition, directions: Record<string, 0 | 1>) =>
+function boundaryMask(graph: GraphDefinition, directions: Record<string, 0 | 1>)
   boundary := graph.edges.filter((edge) => edge.ends.some((end) => not ("vertex" in end)))
   return boundary.reduce((mask, edge, index) =>
     internalIndex := edge.ends.findIndex((end) => "vertex" in end) as 0 | 1

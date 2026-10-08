@@ -88,7 +88,7 @@ describe "example selection", =>
       value: (length: number) => ({ x: length, y: 0 })
     })
 
-    dispatchPointer := (type: string, x: number, pointerType = "mouse") =>
+    function dispatchPointer(type: string, x: number, pointerType = "mouse")
       event := new MouseEvent(type, {
         bubbles: true
         cancelable: true

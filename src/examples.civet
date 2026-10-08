@@ -17,49 +17,49 @@ equalizer4 := symmetricConstraint(4, [0, 4], "=")
 synchronizer := relationConstraint(4, ["1100", "0011"], "synchronizer", "S", [0, 0, 1, 1])
 alternator6 := relationConstraint(6, ["101010", "010101"], "6-alternator", "A")
 
-vertex := (
+function vertex(
   id: string
   x: number
   y: number
   constraint: Vertex["constraint"]
   options: Pick<Vertex, "label" | "annotation"> = {}
-): Vertex =>
+): Vertex
   return { id, x, y, constraint, ...options }
-port := (vertexId: string, portNumber: number): EdgeEnd =>
+function port(vertexId: string, portNumber: number): EdgeEnd
   return { vertex: vertexId, port: portNumber }
-free := (x: number, y: number): EdgeEnd => { return { x, y }; }
-edge := (
+function free(x: number, y: number): EdgeEnd { return { x, y }; }
+function edge(
   id: string
   a: EdgeEnd
   b: EdgeEnd
   control?: Edge["control"]
-): Edge => { return { id, ends: [a, b], control }; }
-routedEdge := (
+): Edge { return { id, ends: [a, b], control }; }
+function routedEdge(
   id: string
   a: EdgeEnd
   b: EdgeEnd
   route: NonNullable<Edge["route"]>
-): Edge => { return { id, ends: [a, b], route }; }
+): Edge { return { id, ends: [a, b], route }; }
 
 FIGURE_4_GRID_SIZE := 80
-figure4Point := (column: number, row: number) =>
+function figure4Point(column: number, row: number)
   return {
     x: 70 + FIGURE_4_GRID_SIZE * column
     y: 1020 - FIGURE_4_GRID_SIZE * row
   };
-figure4Route := (...points: [number, number][]) =>
+function figure4Route(...points: [number, number][])
   return points.map(([column, row]) => figure4Point(column, row))
-figure4Vertex := (
+function figure4Vertex(
   id: string
   column: number
   row: number
   constraint: Vertex["constraint"]
   options: Pick<Vertex, "label" | "annotation"> = {}
-) =>
+)
   { x, y } := figure4Point(column, row)
   return vertex(id, x, y, constraint, options)
 
-const examples: GraphDefinition[] = [
+examples: GraphDefinition[] := [
   {
     id: "cycle-tutorial"
     group: "Full graphs"

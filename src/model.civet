@@ -66,28 +66,28 @@ export interface VertexAnalysis {
   totalPorts: number
 }
 
-export symmetricConstraint := (
+export function symmetricConstraint(
   degree: number
   incomingCounts: number[]
   shortLabel = `${incomingCounts.join(",")}∕${degree}`
-): Constraint =>
-  const allowed: number[] = []
+): Constraint
+  allowed: number[] := []
   for let mask = 0; mask < 2 ** degree; mask += 1
     count .= 0
     for (let bit = 0; bit < degree; bit += 1) count += (mask >> bit) & 1
-    if (count is in incomingCounts) allowed.push(mask)
+    allowed.push(mask) if count is in incomingCounts
   countName := incomingCounts# is 1
     ? `${incomingCounts[0]}-in-${degree}`
     : `{${incomingCounts.join(",")}}-in-${degree}`
   return { name: countName, shortLabel, degree, allowed }
 
-export relationConstraint := (
+export function relationConstraint(
   degree: number
   bitPatterns: string[]
   name: string
   shortLabel: string
   portGroups?: number[]
-): Constraint =>
+): Constraint
   if portGroups and portGroups# is not degree
     throw new Error(`${name} must assign a group to all ${degree} ports`)
   return {
@@ -105,11 +105,11 @@ export relationConstraint := (
     )
   };
 
-export emptyDirections := (graph: GraphDefinition): Record<string, EdgeDirection> =>
+export function emptyDirections(graph: GraphDefinition): Record<string, EdgeDirection>
   return Object.fromEntries(graph.edges.map((edge) => [edge.id, null]))
 
-export incidencesAt := (graph: GraphDefinition, vertexId: string): Incidence[] =>
-  const incidences: Incidence[] = []
+export function incidencesAt(graph: GraphDefinition, vertexId: string): Incidence[]
+  incidences: Incidence[] := []
   for edge of graph.edges
     edge.ends.forEach((end, index) =>
       if "vertex" in end and end.vertex is vertexId
@@ -117,14 +117,14 @@ export incidencesAt := (graph: GraphDefinition, vertexId: string): Incidence[] =
     )
   return incidences.sort((a, b) => a.port - b.port)
 
-bitAt := (pattern: number, port: number): 0 | 1 =>
+function bitAt(pattern: number, port: number): 0 | 1
   return ((pattern >> port) & 1) as 0 | 1
 
-export analyzeVertex := (
+export function analyzeVertex(
   graph: GraphDefinition
   directions: Record<string, EdgeDirection>
   vertex: Vertex
-): VertexAnalysis =>
+): VertexAnalysis
   incidences := incidencesAt(graph, vertex.id)
   compatible := vertex.constraint.allowed.filter((pattern) =>
     for incidence of incidences
@@ -153,11 +153,11 @@ export analyzeVertex := (
       for pattern of compatible
         first := local[0]
         implied.add(bitAt(pattern, first.port) ? first.endIndex : (1 - first.endIndex) as 0 | 1)
-      if (implied.size is 1) forced.set(edgeId, [...implied][0])
+      forced.set(edgeId, [...implied][0]) if implied.size is 1
 
   assignedPorts := incidences.filter(({ edge }) => directions[edge.id] !== null)#
   complete := assignedPorts is incidences#
-  const state: VertexState = compatible# is 0
+  state: VertexState := compatible# is 0
     ? "impossible"
     : complete
       ? "satisfied"
@@ -173,8 +173,8 @@ export analyzeVertex := (
     totalPorts: incidences#
   };
 
-export validateGraph := (graph: GraphDefinition): string[] =>
-  const errors: string[] = []
+export function validateGraph(graph: GraphDefinition): string[]
+  errors: string[] := []
   vertexIds := new Set(graph.vertices.map(({ id }) => id))
   edgeIds := new Set<string>()
 

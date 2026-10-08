@@ -56,36 +56,36 @@ GRAPH_STYLE_PROPERTIES := [
   "--on-accent"
 ] as const
 
-export parseLabelMarkup := (label: string): LabelPart[] =>
-  const parts: LabelPart[] = []
+export function parseLabelMarkup(label: string): LabelPart[]
+  parts: LabelPart[] := []
   italic := /<i>(.*?)<\/i>/g
   cursor .= 0
   for match of label.matchAll(italic)
-    if (match.index > cursor) parts.push({ text: label[cursor..<match.index], italic: false })
+    if match.index > cursor then parts.push({ text: label[cursor..<match.index], italic: false })
     parts.push { text: match[1], italic: true }
     cursor = match.index + match[0]#
-  if (cursor < label#) parts.push({ text: label[>=cursor], italic: false })
+  if cursor < label# then parts.push({ text: label[>=cursor], italic: false })
   return parts# ? parts : [{ text: label, italic: false }]
 
-plainLabel := (label: string) =>
+function plainLabel(label: string)
   return parseLabelMarkup(label).map(({ text }) => text).join("")
 
-export platformUsesCommandKey := (platform: string) =>
+export function platformUsesCommandKey(platform: string)
   return /mac|iphone|ipad|ipod/i.test(platform)
 
-export contradictionSummary := (violated: number, incomplete: number) =>
-  const messages: string[] = []
+export function contradictionSummary(violated: number, incomplete: number)
+  messages: string[] := []
   if violated > 0
     messages.push `${violated} ${violated is 1 ? "vertex is" : "vertices are"} violated.`
   if incomplete > 0
     messages.push `${incomplete} ${incomplete is 1 ? "vertex has" : "vertices have"} no possible completion.`
   return messages.join(" ")
 
-detectedPlatform := =>
+function detectedPlatform()
   userAgentData := (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
   return userAgentData?.platform or navigator.platform or navigator.userAgent
 
-export serializeGraphSvg := (source: SVGSVGElement, theme: Theme): string =>
+export function serializeGraphSvg(source: SVGSVGElement, theme: Theme): string
   svg := source.cloneNode(true) as SVGSVGElement
   if (not svg.hasAttribute("xmlns")) svg.setAttributeNS(XMLNS_NAMESPACE, "xmlns", SVG_NAMESPACE)
   svg.setAttribute "data-theme", theme
@@ -98,7 +98,7 @@ export serializeGraphSvg := (source: SVGSVGElement, theme: Theme): string =>
   computedStyle := getComputedStyle(source)
   for property of GRAPH_STYLE_PROPERTIES
     value := computedStyle.getPropertyValue(property)
-    if (value) svg.style.setProperty(property, value)
+    svg.style.setProperty(property, value) if value
 
   style := document.createElementNS(SVG_NAMESPACE, "style")
   style.setAttribute "data-svg-export", ""
@@ -116,18 +116,18 @@ initialTheme := : Theme =>
   }
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
-endpointPoint := (graph: GraphDefinition, end: EdgeEnd): Point =>
+function endpointPoint(graph: GraphDefinition, end: EdgeEnd): Point
   if "vertex" in end
     vertex := graph.vertices.find(({ id }) => id is end.vertex)
     throw new Error(`Missing vertex ${end.vertex}`) unless vertex
     return { vertex.{x,y} }
   return end
 
-unit := (point: Point): Point =>
+function unit(point: Point): Point
   length := Math.hypot(point.x, point.y) or 1
   return { x: point.x / length, y: point.y / length }
 
-edgeGeometry := (graph: GraphDefinition, edge: Edge) =>
+function edgeGeometry(graph: GraphDefinition, edge: Edge)
   rawStart := endpointPoint(graph, edge.ends[0])
   rawEnd := endpointPoint(graph, edge.ends[1])
   firstWaypoint := edge.route?.[0]
@@ -162,7 +162,7 @@ edgeGeometry := (graph: GraphDefinition, edge: Edge) =>
     return { start, end, midpoint, forward, reverse }
 
   points := [start, ...(edge.route ?? []), end]
-  path := (pathPoints: Point[]) =>
+  function path(pathPoints: Point[])
     return `M ${pathPoints.map(({ x, y }) => `${x} ${y}`).join(" L ")}`
   lengths := points.slice(1).map((point, index) =>
     return Math.hypot(point.x - points[index].x, point.y - points[index].y)
@@ -183,10 +183,10 @@ edgeGeometry := (graph: GraphDefinition, edge: Edge) =>
   reverse := path([...points].reverse())
   return { start, end, midpoint, forward, reverse }
 
-eventPoint := (
+function eventPoint(
   event: MouseEvent | PointerEvent
   element: SVGGraphicsElement | SVGSVGElement
-): Point =>
+): Point
   svg := element instanceof SVGSVGElement ? element : element.ownerSVGElement
   matrix := svg?.getScreenCTM()
   if (not svg or not matrix) return { x: 0, y: 0 }
@@ -196,7 +196,7 @@ eventPoint := (
   local := point.matrixTransform(matrix.inverse())
   return { local.{x,y} }
 
-closestPathLocation := (path: SVGPathElement, point: Point) =>
+function closestPathLocation(path: SVGPathElement, point: Point)
   length := path.getTotalLength()
   bestFraction .= 0
   bestDistance .= Number.POSITIVE_INFINITY
@@ -221,28 +221,28 @@ closestPathLocation := (path: SVGPathElement, point: Point) =>
     radius /= 12
   return { fraction: bestFraction, distance: Math.sqrt(bestDistance) }
 
-closestFraction := (path: SVGPathElement, point: Point): number =>
+function closestFraction(path: SVGPathElement, point: Point): number
   return closestPathLocation(path, point).fraction
 
-edgeZone := (fraction: number): 0 | 1 | 2 =>
+function edgeZone(fraction: number): 0 | 1 | 2
   return fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : 2
 
-export edgeSwipeDirection := (
+export function edgeSwipeDirection(
   startFraction: number
   endFraction: number
   startPoint: Point
   endPoint: Point
-): 0 | 1 | null =>
+): 0 | 1 | null
   distance := Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y)
   progress := endFraction - startFraction
-  if (distance < EDGE_SWIPE_MINIMUM_PIXELS or Math.abs(progress) < EDGE_SWIPE_MINIMUM_FRACTION) return null
+  if distance < EDGE_SWIPE_MINIMUM_PIXELS or Math.abs(progress) < EDGE_SWIPE_MINIMUM_FRACTION then return null
   return progress > 0 ? 1 : 0
 
-directionLabel := (edge: Edge, direction: 0 | 1): string =>
+function directionLabel(edge: Edge, direction: 0 | 1): string
   end := edge.ends[direction]
   return "vertex" in end ? `toward ${end.vertex}` : "toward the dangling end"
 
-constraintRule := (constraint: Constraint): string =>
+function constraintRule(constraint: Constraint): string
   exact := /^(\d+)-in-(\d+)$/.exec(constraint.name)
   if (exact) return `Exactly ${exact[1]} of ${exact[2]} edges point inward`
   if constraint.name is `{0,${constraint.degree}}-in-${constraint.degree}`
@@ -262,8 +262,8 @@ export function Visualizer()
     startEdgeId?: string
     startVertexId?: string
   } | null = null
-  let suppressedEdgeClick: { edgeId: string; expires: number } | null = null
-  let suppressedVertexClick: { vertexId: string; expires: number } | null = null
+  suppressedEdgeClick: { edgeId: string; expires: number } | null .= null
+  suppressedVertexClick: { vertexId: string; expires: number } | null .= null
   usesCommandKey := platformUsesCommandKey(detectedPlatform())
   historyModifier := usesCommandKey ? "Command" : "Ctrl"
   [theme, setTheme] := createSignal<Theme>(initialTheme())
@@ -281,7 +281,7 @@ export function Visualizer()
     for vertex of selectedGraph().vertices
       key := `${vertex.constraint.name}:${vertex.constraint.allowed.join(",")}`
       group := grouped.get(key) ?? { vertex.constraint, labels: new Set<string>() }
-      if (vertex.label) group.labels.add(vertex.label)
+      group.labels.add(vertex.label) if vertex.label
       grouped.set key, group
     return [...grouped.values()].map(({ constraint, labels }) =>
       visibleLabels := [...labels]
@@ -300,7 +300,7 @@ export function Visualizer()
   ))
 
   forcedEdges := createMemo(=>
-    const result: Record<string, { direction: 0 | 1 | null; conflict: boolean }> = {}
+    result: Record<string, { direction: 0 | 1 | null; conflict: boolean }> := {}
     for edge of selectedGraph().edges
       implied := new Set<0 | 1>()
       for analysis of Object.values(analyses())
@@ -327,11 +327,11 @@ export function Visualizer()
     return { oriented, impossible, violated, incompleteImpossible, satisfied, forced, edgeConflicts, solved }
   )
 
-  directionsEqual := (first: DirectionState, second: DirectionState) =>
+  function directionsEqual(first: DirectionState, second: DirectionState)
     keys := Object.keys(first)
     return keys# is Object.keys(second)# and keys.every((key) => first[key] is second[key])
 
-  commitDirections := (update: DirectionUpdate) =>
+  function commitDirections(update: DirectionUpdate)
     current := directions()
     next := update <? "function" ? update(current) : update
     if directionsEqual(current, next) then return
@@ -341,7 +341,7 @@ export function Visualizer()
       setDirections(next);
     );
 
-  undo := =>
+  function undo()
     stack := undoStack()
     previous := stack[stack# - 1]
     return unless previous
@@ -363,7 +363,7 @@ export function Visualizer()
       setDirections(next);
     );
 
-  chooseExample := (id: string) =>
+  function chooseExample(id: string)
     graph := EXAMPLES.find((example) => example.id is id) ?? EXAMPLES[0]
     batch(=>
       setSelectedId graph.id
@@ -373,26 +373,26 @@ export function Visualizer()
       setHovered(null);
     );
 
-  setEdge := (edgeId: string, direction: EdgeDirection) =>
+  function setEdge(edgeId: string, direction: EdgeDirection)
     commitDirections((current) => ({ ...current, [edgeId]: direction }));
 
-  interactWithEdge := (event: MouseEvent, edge: Edge) =>
+  function interactWithEdge(event: MouseEvent, edge: Edge)
     path := event.currentTarget as SVGPathElement
     fraction := closestFraction(path, eventPoint(event, path))
     setEdge(edge.id, fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : null);
 
-  clickEdge := (event: MouseEvent, edge: Edge) =>
+  function clickEdge(event: MouseEvent, edge: Edge)
     if suppressedEdgeClick?.edgeId is edge.id and performance.now() <= suppressedEdgeClick.expires
       suppressedEdgeClick = null
       return
     suppressedEdgeClick = null
     interactWithEdge(event, edge);
 
-  cycleEdge := (edge: Edge) =>
+  function cycleEdge(edge: Edge)
     current := directions()[edge.id]
     setEdge(edge.id, current === null ? 1 : current is 1 ? 0 : null);
 
-  applyForcedAt := (vertex: Vertex) =>
+  function applyForcedAt(vertex: Vertex)
     forced := analyses()[vertex.id].forced
     if forced.size is 0 then return
     commitDirections((current) =>
@@ -401,7 +401,7 @@ export function Visualizer()
       return next
     );
 
-  applyAllForced := =>
+  function applyAllForced()
     currentAnalyses := analyses()
     commitDirections((current) =>
       next := { ...current }
@@ -412,10 +412,10 @@ export function Visualizer()
       return next
     );
 
-  endpointCandidatesNear := (point: Point, allowedEdgeIds?: Set<string>) =>
-    const candidates: DragCandidate[] = []
+  function endpointCandidatesNear(point: Point, allowedEdgeIds?: Set<string>)
+    candidates: DragCandidate[] := []
     for edge of selectedGraph().edges
-      if (allowedEdgeIds and not allowedEdgeIds.has(edge.id)) continue
+      continue if allowedEdgeIds and not allowedEdgeIds.has(edge.id)
       edge.ends.forEach((end, index) =>
         endpoint := endpointPoint(selectedGraph(), end)
         distance := Math.hypot(endpoint.x - point.x, endpoint.y - point.y)
@@ -424,10 +424,10 @@ export function Visualizer()
       )
     return candidates.sort((first, second) => first.distance - second.distance)
 
-  pathForEdge := (edgeId: string) =>
+  function pathForEdge(edgeId: string)
     return graphCanvas?.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${edgeId}"]`) ?? null
 
-  dragCandidatesAt := (event: PointerEvent, allowedEdgeIds?: Set<string>) =>
+  function dragCandidatesAt(event: PointerEvent, allowedEdgeIds?: Set<string>)
     return [] unless graphCanvas
     point := eventPoint(event, graphCanvas)
     candidates := endpointCandidatesNear(point, allowedEdgeIds)
@@ -444,7 +444,7 @@ export function Visualizer()
 
     if allowedEdgeIds
       for edgeId of allowedEdgeIds
-        if (visited.has(edgeId)) continue
+        continue if visited.has(edgeId)
         edge := selectedGraph().edges.find(({ id }) => id is edgeId)
         path := pathForEdge(edgeId)
         if (not edge or not path or path.getTotalLength !<? "function") continue
@@ -453,12 +453,12 @@ export function Visualizer()
           candidates.push { edge, ...location, source: "edge" }
     return candidates
 
-  resolveDrag := (event: PointerEvent) =>
+  function resolveDrag(event: PointerEvent)
     drag := activeDrag
     return null unless drag
     allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id))
     endCandidates := dragCandidatesAt(event, allowed)
-    let best: { edge: Edge; direction: 0 | 1; score: number } | null = null
+    best: { edge: Edge; direction: 0 | 1; score: number } | null .= null
     for start of drag.startCandidates
       for end of endCandidates
         continue unless start.edge.id is end.edge.id
@@ -468,7 +468,7 @@ export function Visualizer()
           drag.startPoint
           { x: event.clientX, y: event.clientY }
         )
-        if (direction === null) continue
+        continue if direction === null
         specificity := Number(start.source is "edge") + Number(end.source is "edge")
         unoriented := directions()[start.edge.id] === null ? 1 : 0
         progress := Math.abs(end.fraction - start.fraction)
@@ -476,31 +476,31 @@ export function Visualizer()
         if (not best or score > best.score) best = { start.edge, direction, score }
     return best
 
-  resolveSameEdgeZone := (event: PointerEvent) =>
+  function resolveSameEdgeZone(event: PointerEvent)
     drag := activeDrag
     return null unless drag
     allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id))
     endCandidates := dragCandidatesAt(event, allowed)
-    let best: { edge: Edge; zone: 0 | 1 | 2; score: number } | null = null
+    best: { edge: Edge; zone: 0 | 1 | 2; score: number } | null .= null
     for start of drag.startCandidates
-      if (drag.startEdgeId and start.edge.id is not drag.startEdgeId) continue
+      continue if drag.startEdgeId and start.edge.id is not drag.startEdgeId
       for end of endCandidates
         continue unless start.edge.id is end.edge.id
         zone := edgeZone(start.fraction)
-        if (zone is not edgeZone(end.fraction)) continue
+        continue if zone is not edgeZone(end.fraction)
         specificity := Number(start.source is "edge") + Number(end.source is "edge")
         score := specificity * 10000 - start.distance - end.distance
         if (not best or score > best.score) best = { start.edge, zone, score }
     return best
 
-  endsNearStartVertex := (event: PointerEvent) =>
+  function endsNearStartVertex(event: PointerEvent)
     vertexId := activeDrag?.startVertexId
     vertex := vertexId and selectedGraph().vertices.find(({ id }) => id is vertexId)
     if (not vertex or not graphCanvas) return false
     point := eventPoint(event, graphCanvas)
     return Math.hypot(vertex.x - point.x, vertex.y - point.y) <= ENDPOINT_DRAG_RADIUS
 
-  beginDrag := (event: PointerEvent) =>
+  function beginDrag(event: PointerEvent)
     if activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas then return
     candidates := dragCandidatesAt(event)
     startVertex := (event.target as Element | null)?.closest?.("[data-vertex-id]") as SVGGElement | null
@@ -527,7 +527,7 @@ export function Visualizer()
       // Pointer capture is an enhancement; the gesture can still finish over the canvas.
     }
 
-  trackDrag := (event: PointerEvent) =>
+  function trackDrag(event: PointerEvent)
     drag := activeDrag
     if drag?.pointerId is event.pointerId
       event.preventDefault()
@@ -549,7 +549,7 @@ export function Visualizer()
     fraction := closestFraction(path, eventPoint(event, graphCanvas))
     setHovered({ edge: edge.id, zone: edgeZone(fraction) });
 
-  finishDrag := (event: PointerEvent) =>
+  function finishDrag(event: PointerEvent)
     drag := activeDrag
     if (not drag or drag.pointerId is not event.pointerId or not graphCanvas) return
     sameVertex := endsNearStartVertex(event)
@@ -569,21 +569,21 @@ export function Visualizer()
     if sameVertex
       event.preventDefault()
       vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId)
-      if (vertex) applyForcedAt(vertex)
+      applyForcedAt(vertex) if vertex
       if drag.startVertexId
         suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
       return
     if sameZone
       event.preventDefault()
-      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
-      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
+      if drag.startEdgeId then suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
+      if drag.startVertexId then suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
       setEdge(sameZone.edge.id, sameZone.zone is 2 ? null : sameZone.zone)
       return
     if moved
       event.preventDefault()
-      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
-      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
-      if (resolution) setEdge(resolution.edge.id, resolution.direction)
+      if drag.startEdgeId then suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
+      if drag.startVertexId then suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
+      setEdge(resolution.edge.id, resolution.direction) if resolution
       return
     event.preventDefault()
     if drag.startEdgeId
@@ -596,15 +596,15 @@ export function Visualizer()
         suppressedEdgeClick = { edgeId: candidate.edge.id, expires: performance.now() + 750 };
     else if drag.startVertexId
       vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId)
-      if (vertex) applyForcedAt(vertex)
+      applyForcedAt(vertex) if vertex
       suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 };
 
-  cancelDrag := (event: PointerEvent) =>
+  function cancelDrag(event: PointerEvent)
     if activeDrag?.pointerId is event.pointerId
       activeDrag = null
       setHovered(null);
 
-  reserveTouchStart := (event: TouchEvent) =>
+  function reserveTouchStart(event: TouchEvent)
     touch := event.touches?.[0]
     nearEndpoint := touch and graphCanvas and endpointCandidatesNear(eventPoint(
       { touch.{clientX,clientY} } as PointerEvent
@@ -612,17 +612,17 @@ export function Visualizer()
     ))# > 0
     if (activeDrag !== null or nearEndpoint) event.preventDefault();
 
-  reserveActiveTouch := (event: TouchEvent) =>
+  function reserveActiveTouch(event: TouchEvent)
     if (activeDrag !== null) event.preventDefault();
 
-  clickVertex := (vertex: Vertex) =>
+  function clickVertex(vertex: Vertex)
     if suppressedVertexClick?.vertexId is vertex.id and performance.now() <= suppressedVertexClick.expires
       suppressedVertexClick = null
       return
     suppressedVertexClick = null
     applyForcedAt(vertex);
 
-  stateSummary := =>
+  function stateSummary()
     current := progress()
     if (current.solved) return { tone: "success", title: "Solved", text: "Every edge is oriented and every vertex is satisfied." }
     if (current.impossible > 0) return {
@@ -648,7 +648,7 @@ export function Visualizer()
 
   groups := ["Full graphs", "Paper gadgets"] as const
 
-  handleHistoryKeyDown := (event: KeyboardEvent) =>
+  function handleHistoryKeyDown(event: KeyboardEvent)
     if event.defaultPrevented or event.altKey or (not event.ctrlKey and not event.metaKey) then return
     target := event.target
     if (
@@ -669,7 +669,7 @@ export function Visualizer()
     document.documentElement.dataset.theme = theme();
   )
 
-  toggleTheme := =>
+  function toggleTheme()
     next := theme() is "dark" ? "light" : "dark"
     setTheme next
     try
@@ -678,7 +678,7 @@ export function Visualizer()
       // The toggle still works for this page when storage is unavailable.
     }
 
-  downloadSvg := =>
+  function downloadSvg()
     return unless graphCanvas
     blob := new Blob([serializeGraphSvg(graphCanvas, theme())], {
       type: "image/svg+xml;charset=utf-8"
@@ -818,10 +818,10 @@ export function Visualizer()
 
               <g .edge-layer>
                 <For each={selectedGraph().edges}>{(edge) =>
-                  geometry := => { return edgeGeometry(selectedGraph(), edge); }
+                  function geometry() { return edgeGeometry(selectedGraph(), edge); }
                   direction := => { return directions()[edge.id] ?? null; }
                   forced := => { return forcedEdges()[edge.id] ?? { direction: null, conflict: false }; }
-                  hover := => { return hovered()?.edge is edge.id ? hovered()?.zone : undefined; }
+                  function hover() { return hovered()?.edge is edge.id ? hovered()?.zone : undefined; }
                   return (
                     <g class={`edge-group${forced().conflict ? " edge-group--conflict" : ""}${hover() is not undefined ? " edge-group--previewing" : ""}`}>
                       <g .edge-visual>
@@ -877,11 +877,11 @@ export function Visualizer()
                     assignedPorts: 0
                     totalPorts: 0
                   }; }
-                  clickable := => { return analysis().state is "forced"; }
-                  vertexName := =>
+                  function clickable() { return analysis().state is "forced"; }
+                  function vertexName()
                     name := vertex.annotation?.text ?? vertex.label
                     return name is undefined ? undefined : plainLabel(name)
-                  interiorLabel := => { return vertex.label ?? vertex.constraint.shortLabel; }
+                  function interiorLabel() { return vertex.label ?? vertex.constraint.shortLabel; }
                   annotation := =>
                     return null unless vertex.annotation
                     corner := vertex.annotation.corner ?? "top-right"
@@ -893,7 +893,7 @@ export function Visualizer()
                       y: (bottom ? 1 : -1) * (NODE_RADIUS + 4)
                       anchor: (right ? "start" : "end") as "start" | "end"
                     };
-                  portLabels := =>
+                  function portLabels()
                     groups := vertex.constraint.portGroups
                     return [] unless groups
                     return incidencesAt(selectedGraph(), vertex.id).map((incidence) =>
