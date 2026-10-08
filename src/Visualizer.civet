@@ -705,7 +705,7 @@ export function Visualizer()
               <span><span .title-initial>P</span>LAYGROUND</span>
         <div .masthead-actions>
           <button
-            class="theme-toggle"
+            .theme-toggle
             type="button"
             aria-label="Dark mode"
             aria-pressed={theme() is "dark"}
@@ -717,7 +717,7 @@ export function Visualizer()
             <span .masthead-link__label>Paper</span>
             <span .external-arrow aria-hidden="true">↗</span>
           <a
-            class="masthead-link github-link"
+            .masthead-link.github-link
             href="https://github.com/edemaine/graph-orientation-visualizer"
             target="_blank"
             rel="noreferrer"
@@ -788,8 +788,8 @@ export function Visualizer()
         <section .canvas-panel aria-label={`${selectedGraph().title} graph`}>
           <div class={`graph-frame${progress().solved ? " graph-frame--solved" : ""}`}>
             <svg
+              .graph-canvas
               ref=graphCanvas!
-              class="graph-canvas"
               viewBox={(selectedGraph().viewBox ?? [0, 0, 800, 560]).join(" ")}
               role="img"
               aria-label={`Interactive graph: ${selectedGraph().title}`}
@@ -828,13 +828,13 @@ export function Visualizer()
                         <path .edge-base d={geometry().forward}>
                         <Show when={direction() !== null}>
                           <path
-                            class="edge-oriented"
+                            .edge-oriented
                             d={direction() is 1 ? geometry().forward : geometry().reverse}
                             marker-end="url(#arrow)"
                           >
                         <Show when={direction() === null and forced().direction !== null}>
                           <path
-                            class="edge-forced"
+                            .edge-forced
                             d={forced().direction is 1 ? geometry().forward : geometry().reverse}
                             marker-end="url(#ghost-arrow)"
                           >
@@ -847,7 +847,7 @@ export function Visualizer()
                           marker-end={hover() is 2 ? undefined : "url(#preview-arrow)"}
                         >
                       <path
-                        class="edge-hit"
+                        .edge-hit
                         data-edge-id=edge.id
                         d={geometry().forward}
                         tabindex="0"
@@ -937,7 +937,7 @@ export function Visualizer()
                       >{interiorLabel()}
                       <Show when={annotation()}>{(visibleAnnotation) => (
                         <text
-                          class="vertex-annotation"
+                          .vertex-annotation
                           x={visibleAnnotation().x}
                           y={visibleAnnotation().y}
                           text-anchor={visibleAnnotation().anchor}
@@ -971,7 +971,7 @@ export function Visualizer()
               <span .counter><strong>{progress().oriented}</strong> / {selectedGraph().edges#} edges</span>
               <div .history-controls role="group" aria-label="Orientation history">
                 <button
-                  class="history-button"
+                  .history-button
                   type="button"
                   disabled={not canUndo()}
                   aria-label="Undo orientation change"
@@ -980,7 +980,7 @@ export function Visualizer()
                 >
                   <span aria-hidden="true">↶</span><span .history-button__label>Undo</span>
                 <button
-                  class="history-button"
+                  .history-button
                   type="button"
                   disabled={not canRedo()}
                   aria-label="Redo orientation change"
