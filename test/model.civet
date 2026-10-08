@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
-import {
+{ describe, expect, it } from vitest;
+{
   analyzeVertex,
   emptyDirections,
   relationConstraint,
   symmetricConstraint,
-  type GraphDefinition,
-} from "../src/model.civet";
-import { EXAMPLES } from "../src/examples.civet";
+  type GraphDefinition
+} from ../src/model.civet;
+{ EXAMPLES } from ../src/examples.civet;
 
 const star: GraphDefinition = {
   id: "star",
@@ -16,51 +16,51 @@ const star: GraphDefinition = {
   vertices: [{ id: "v", x: 0, y: 0, constraint: symmetricConstraint(3, [1]) }],
   edges: [0, 1, 2].map((port) => ({
     id: `e${port}`,
-    ends: [{ vertex: "v", port }, { x: 100 + port, y: 0 }],
-  })),
+    ends: [{ vertex: "v", port }, { x: 100 + port, y: 0 }]
+  }))
 };
 
-describe("partial vertex analysis", () => {
-  it("starts viable and unforced", () => {
-    const analysis = analyzeVertex(star, emptyDirections(star), star.vertices[0]);
+describe("partial vertex analysis", => {
+  it("starts viable and unforced", => {
+    analysis := analyzeVertex(star, emptyDirections(star), star.vertices[0]);
     expect(analysis.state).toBe("open");
     expect(analysis.compatible).toHaveLength(3);
   });
 
-  it("finds forced edges after one incoming edge", () => {
-    const analysis = analyzeVertex(star, { e0: 0, e1: null, e2: null }, star.vertices[0]);
+  it("finds forced edges after one incoming edge", => {
+    analysis := analyzeVertex(star, { e0: 0, e1: null, e2: null }, star.vertices[0]);
     expect(analysis.state).toBe("forced");
     expect(analysis.forced.get("e1")).toBe(1);
     expect(analysis.forced.get("e2")).toBe(1);
   });
 
-  it("reports a local contradiction", () => {
-    const analysis = analyzeVertex(star, { e0: 0, e1: 0, e2: null }, star.vertices[0]);
+  it("reports a local contradiction", => {
+    analysis := analyzeVertex(star, { e0: 0, e1: 0, e2: null }, star.vertices[0]);
     expect(analysis.state).toBe("impossible");
     expect(analysis.compatible).toHaveLength(0);
   });
 
-  it("supports ordered asymmetric relations", () => {
-    const constraint = relationConstraint(2, ["10"], "ordered", "O");
+  it("supports ordered asymmetric relations", => {
+    constraint := relationConstraint(2, ["10"], "ordered", "O");
     expect(constraint.allowed).toEqual([1]);
   });
 });
 
-const satisfyingAssignments = (graph: GraphDefinition) => {
+satisfyingAssignments := (graph: GraphDefinition) => {
   const solutions: Record<string, 0 | 1>[] = [];
-  const directions = emptyDirections(graph);
+  directions := emptyDirections(graph);
 
-  const search = (edgeIndex: number) => {
-    if (edgeIndex === graph.edges.length) {
+  search := (edgeIndex: number) => {
+    if (edgeIndex is graph.edges#) {
       solutions.push({ ...directions } as Record<string, 0 | 1>);
       return;
     }
 
-    const edge = graph.edges[edgeIndex];
+    edge := graph.edges[edgeIndex];
     for (const direction of [0, 1] as const) {
       directions[edge.id] = direction;
-      const viable = graph.vertices.every(
-        (vertex) => analyzeVertex(graph, directions, vertex).state !== "impossible",
+      viable := graph.vertices.every(
+        (vertex) => analyzeVertex(graph, directions, vertex).state is not "impossible"
       );
       if (viable) search(edgeIndex + 1);
     }
@@ -71,59 +71,59 @@ const satisfyingAssignments = (graph: GraphDefinition) => {
   return solutions;
 };
 
-const boundaryMask = (graph: GraphDefinition, directions: Record<string, 0 | 1>) => {
-  const boundary = graph.edges.filter((edge) => edge.ends.some((end) => !("vertex" in end)));
+boundaryMask := (graph: GraphDefinition, directions: Record<string, 0 | 1>) => {
+  boundary := graph.edges.filter((edge) => edge.ends.some((end) => not ("vertex" in end)));
   return boundary.reduce((mask, edge, index) => {
-    const internalIndex = edge.ends.findIndex((end) => "vertex" in end) as 0 | 1;
-    return mask | (Number(directions[edge.id] === internalIndex) << index);
+    internalIndex := edge.ends.findIndex((end) => "vertex" in end) as 0 | 1;
+    return mask | (Number(directions[edge.id] is internalIndex) << index);
   }, 0);
 };
 
-describe("example suite", () => {
-  it.each(EXAMPLES.filter(({ id }) => id !== "all-equalizer-k4").map((example) => [example.title, example] as const))(
+describe("example suite", => {
+  it.each(EXAMPLES.filter(({ id }) => id is not "all-equalizer-k4").map((example) => [example.title, example] as const))(
     "%s has a satisfying orientation",
-    (_, graph) => expect(satisfyingAssignments(graph).length).toBeGreaterThan(0),
+    (_, graph) => expect(satisfyingAssignments(graph)#).toBeGreaterThan(0)
   );
 
-  it("the two-vertex gadget has exactly the 1-in-4 boundary relation", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "one-in-four")!;
-    const masks = new Set(satisfyingAssignments(graph).map((solution) => boundaryMask(graph, solution)));
+  it("the two-vertex gadget has exactly the 1-in-4 boundary relation", => {
+    graph := EXAMPLES.find(({ id }) => id is "one-in-four")!;
+    masks := new Set(satisfyingAssignments(graph).map((solution) => boundaryMask(graph, solution)));
     expect([...masks].sort((a, b) => a - b)).toEqual([1, 2, 4, 8]);
   });
 
-  it("the parsimonious gadget uniquely realizes every 2-in-4 boundary state", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "parsimonious-two-in-four")!;
-    const counts = new Map<number, number>();
+  it("the parsimonious gadget uniquely realizes every 2-in-4 boundary state", => {
+    graph := EXAMPLES.find(({ id }) => id is "parsimonious-two-in-four")!;
+    counts := new Map<number, number>();
     for (const solution of satisfyingAssignments(graph)) {
-      const mask = boundaryMask(graph, solution);
+      mask := boundaryMask(graph, solution);
       counts.set(mask, (counts.get(mask) ?? 0) + 1);
     }
     expect([...counts.entries()].sort(([a], [b]) => a - b)).toEqual([
-      [3, 1], [5, 1], [6, 1], [9, 1], [10, 1], [12, 1],
+      [3, 1], [5, 1], [6, 1], [9, 1], [10, 1], [12, 1]
     ]);
   });
 
-  it("the planar crossover uniquely propagates both crossing signals", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "crossover")!;
-    const counts = new Map<number, number>();
+  it("the planar crossover uniquely propagates both crossing signals", => {
+    graph := EXAMPLES.find(({ id }) => id is "crossover")!;
+    counts := new Map<number, number>();
     for (const solution of satisfyingAssignments(graph)) {
-      const mask = boundaryMask(graph, solution);
+      mask := boundaryMask(graph, solution);
       counts.set(mask, (counts.get(mask) ?? 0) + 1);
     }
     expect([...counts.entries()].sort(([a], [b]) => a - b)).toEqual([
-      [3, 1], [5, 1], [10, 1], [12, 1],
+      [3, 1], [5, 1], [10, 1], [12, 1]
     ]);
   });
 
-  it("Figure 4 has the two orientations induced by its satisfying assignments", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "figure-4-one-in-three-go")!;
+  it("Figure 4 has the two orientations induced by its satisfying assignments", => {
+    graph := EXAMPLES.find(({ id }) => id is "figure-4-one-in-three-go")!;
     expect(graph.vertices).toHaveLength(16);
     expect(graph.edges).toHaveLength(24);
     expect(satisfyingAssignments(graph)).toHaveLength(2);
 
-    const gridPoints = [
+    gridPoints := [
       ...graph.vertices,
-      ...graph.edges.flatMap(({ route }) => route ?? []),
+      ...graph.edges.flatMap(({ route }) => route ?? [])
     ];
     for (const { x, y } of gridPoints) {
       expect(Number.isInteger((x - 70) / 80)).toBe(true);
@@ -131,62 +131,62 @@ describe("example suite", () => {
     }
   });
 
-  it("the equalizer K₄ has two satisfying orientations", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "equalizer-k4-puzzle")!;
-    const solutions = satisfyingAssignments(graph);
+  it("the equalizer K₄ has two satisfying orientations", => {
+    graph := EXAMPLES.find(({ id }) => id is "equalizer-k4-puzzle")!;
+    solutions := satisfyingAssignments(graph);
     expect(solutions).toHaveLength(2);
 
     for (const solution of solutions) {
-      expect(["el", "er", "em"].every((edgeId) => solution[edgeId] === 1)).toBe(true);
+      expect(["el", "er", "em"].every((edgeId) => solution[edgeId] is 1)).toBe(true);
     }
   });
 
-  it("the all-equalizer K₄ is impossible", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "all-equalizer-k4")!;
+  it("the all-equalizer K₄ is impossible", => {
+    graph := EXAMPLES.find(({ id }) => id is "all-equalizer-k4")!;
     expect(satisfyingAssignments(graph)).toHaveLength(0);
   });
 
-  it("the two-equalizer K₄ has two satisfying orientations", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "two-equalizer-k4")!;
+  it("the two-equalizer K₄ has two satisfying orientations", => {
+    graph := EXAMPLES.find(({ id }) => id is "two-equalizer-k4")!;
     expect(satisfyingAssignments(graph)).toHaveLength(2);
-    expect(graph.vertices.filter(({ constraint }) => constraint.shortLabel === "=").map(({ id }) => id)).toEqual([
+    expect(graph.vertices.filter(({ constraint }) => constraint.shortLabel is "=").map(({ id }) => id)).toEqual([
       "left",
-      "right",
+      "right"
     ]);
   });
 
-  it("the triangular prism has four pairs of directed cycles", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "triangular-prism")!;
-    const solutions = satisfyingAssignments(graph);
+  it("the triangular prism has four pairs of directed cycles", => {
+    graph := EXAMPLES.find(({ id }) => id is "triangular-prism")!;
+    solutions := satisfyingAssignments(graph);
     expect(solutions).toHaveLength(4);
 
     for (const solution of solutions) {
       expect(["match-top", "match-left", "match-right"].every(
-        (edgeId) => solution[edgeId] === 1,
+        (edgeId) => solution[edgeId] is 1
       )).toBe(true);
     }
 
-    const vertices = Object.fromEntries(graph.vertices.map((vertex) => [vertex.id, vertex]));
+    vertices := Object.fromEntries(graph.vertices.map((vertex) => [vertex.id, vertex]));
     for (const prefix of ["outer", "inner"]) {
-      const top = vertices[`${prefix}-top`];
-      const left = vertices[`${prefix}-left`];
-      const right = vertices[`${prefix}-right`];
-      const base = Math.hypot(right.x - left.x, right.y - left.y);
-      const side = Math.hypot(top.x - left.x, top.y - left.y);
+      top := vertices[`${prefix}-top`];
+      left := vertices[`${prefix}-left`];
+      right := vertices[`${prefix}-right`];
+      base := Math.hypot(right.x - left.x, right.y - left.y);
+      side := Math.hypot(top.x - left.x, top.y - left.y);
       expect(Math.abs(base - side) / base).toBeLessThan(0.002);
     }
   });
 
-  it("the all-equalizer cube has its two bipartite orientations", () => {
-    const graph = EXAMPLES.find(({ id }) => id === "all-equalizer-cube")!;
+  it("the all-equalizer cube has its two bipartite orientations", => {
+    graph := EXAMPLES.find(({ id }) => id is "all-equalizer-cube")!;
     expect(satisfyingAssignments(graph)).toHaveLength(2);
 
-    const vertices = Object.fromEntries(graph.vertices.map((vertex) => [vertex.id, vertex]));
+    vertices := Object.fromEntries(graph.vertices.map((vertex) => [vertex.id, vertex]));
     expect(vertices["outer-ne"].x - vertices["outer-nw"].x).toBe(
-      vertices["outer-sw"].y - vertices["outer-nw"].y,
+      vertices["outer-sw"].y - vertices["outer-nw"].y
     );
     expect(vertices["inner-ne"].x - vertices["inner-nw"].x).toBe(
-      vertices["inner-sw"].y - vertices["inner-nw"].y,
+      vertices["inner-sw"].y - vertices["inner-nw"].y
     );
   });
 });

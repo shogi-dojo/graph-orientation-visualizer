@@ -1,16 +1,16 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { render } from "solid-js/web";
-import {
+{ afterEach, describe, expect, it, vi } from vitest;
+{ render } from solid-js/web;
+{
   Visualizer,
   contradictionSummary,
   edgeSwipeDirection,
   platformUsesCommandKey,
-  serializeGraphSvg,
-} from "../src/Visualizer.civet";
+  serializeGraphSvg
+} from ../src/Visualizer.civet;
 
 let dispose: (() => void) | undefined;
 
-afterEach(() => {
+afterEach(=> {
   vi.restoreAllMocks();
   dispose?.();
   dispose = undefined;
@@ -19,19 +19,19 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe("example selection", () => {
-  it("distinguishes violated vertices from incomplete contradictions", () => {
+describe("example selection", => {
+  it("distinguishes violated vertices from incomplete contradictions", => {
     expect(contradictionSummary(1, 0)).toBe("1 vertex is violated.");
     expect(contradictionSummary(0, 2)).toBe("2 vertices have no possible completion.");
     expect(contradictionSummary(1, 2)).toBe(
-      "1 vertex is violated. 2 vertices have no possible completion.",
+      "1 vertex is violated. 2 vertices have no possible completion."
     );
 
-    const root = document.createElement("div");
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
-    const ab = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    const da = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="da:"]')!;
+    dispose = render(=> <Visualizer />, root);
+    ab := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
+    da := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="da:"]')!;
     ab.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     da.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     da.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -40,23 +40,23 @@ describe("example selection", () => {
     expect(root.querySelector(".state-card")?.textContent).not.toContain("no possible completion");
   });
 
-  it("uses edge progress to resolve deliberate swipes in either direction", () => {
+  it("uses edge progress to resolve deliberate swipes in either direction", => {
     expect(edgeSwipeDirection(0.4, 0.6, { x: 10, y: 10 }, { x: 30, y: 10 })).toBe(1);
     expect(edgeSwipeDirection(0.6, 0.4, { x: 30, y: 10 }, { x: 10, y: 10 })).toBe(0);
     expect(edgeSwipeDirection(0.4, 0.6, { x: 10, y: 10 }, { x: 18, y: 10 })).toBeNull();
     expect(edgeSwipeDirection(0.5, 0.502, { x: 10, y: 10 }, { x: 30, y: 10 })).toBeNull();
   });
 
-  it("uses Command shortcut labels on Apple platforms", () => {
+  it("uses Command shortcut labels on Apple platforms", => {
     expect(platformUsesCommandKey("MacIntel")).toBe(true);
     expect(platformUsesCommandKey("macOS")).toBe(true);
     expect(platformUsesCommandKey("Win32")).toBe(false);
     vi.spyOn(window.navigator, "platform", "get").mockReturnValue("MacIntel");
 
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const keyboardNote = root.querySelector(".keyboard-note")!;
+    keyboardNote := root.querySelector(".keyboard-note")!;
     expect(keyboardNote.textContent).toContain("Command+Z undo");
     expect(keyboardNote.textContent).toContain("Command+Shift+Z redo");
     expect(keyboardNote.textContent).not.toContain("Ctrl");
@@ -66,51 +66,51 @@ describe("example selection", () => {
       .toBe("Redo (Command + Shift + Z)");
   });
 
-  it("orients an edge by dragging and suppresses the following synthetic click", () => {
-    const root = document.createElement("div");
+  it("orients an edge by dragging and suppresses the following synthetic click", => {
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
-    const path = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    const svg = path.ownerSVGElement!;
+    path := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
+    svg := path.ownerSVGElement!;
     Object.defineProperty(svg, "getScreenCTM", {
       configurable: true,
-      value: () => ({ inverse: () => ({}) }),
+      value: => ({ inverse: => ({}) })
     });
     Object.defineProperty(svg, "createSVGPoint", {
       configurable: true,
-      value: () => {
-        const point = {
+      value: => {
+        point := {
           x: 0,
           y: 0,
-          matrixTransform: () => ({ x: point.x, y: point.y }),
+          matrixTransform: => ({ point.{x,y} })
         };
         return point;
-      },
+      }
     });
-    Object.defineProperty(path, "getTotalLength", { configurable: true, value: () => 100 });
+    Object.defineProperty(path, "getTotalLength", { configurable: true, value: => 100 });
     Object.defineProperty(path, "getPointAtLength", {
       configurable: true,
-      value: (length: number) => ({ x: length, y: 0 }),
+      value: (length: number) => ({ x: length, y: 0 })
     });
 
-    const dispatchPointer = (type: string, x: number, pointerType = "mouse") => {
-      const event = new MouseEvent(type, {
+    dispatchPointer := (type: string, x: number, pointerType = "mouse") => {
+      event := new MouseEvent(type, {
         bubbles: true,
         cancelable: true,
         button: 0,
         clientX: x,
-        clientY: 0,
+        clientY: 0
       });
       Object.defineProperties(event, {
         pointerId: { value: 7 },
         isPrimary: { value: true },
-        pointerType: { value: pointerType },
+        pointerType: { value: pointerType }
       });
       path.dispatchEvent(event);
     };
 
-    const touchStart = new Event("touchstart", { bubbles: true, cancelable: true });
+    touchStart := new Event("touchstart", { bubbles: true, cancelable: true });
     path.dispatchEvent(touchStart);
     expect(touchStart.defaultPrevented).toBe(true);
 
@@ -131,7 +131,7 @@ describe("example selection", () => {
     expect(path.getAttribute("aria-label")).toContain("toward b");
 
     dispatchPointer("pointermove", 90);
-    const preview = root.querySelector<SVGPathElement>(".edge-preview--directed")!;
+    preview := root.querySelector<SVGPathElement>(".edge-preview--directed")!;
     expect(preview).not.toBeNull();
     expect(preview.getAttribute("marker-end")).toBe("url(#preview-arrow)");
     expect(preview.getAttribute("d")).toBe(path.getAttribute("d"));
@@ -147,59 +147,59 @@ describe("example selection", () => {
     expect(path.getAttribute("aria-label")).toContain("toward b");
   });
 
-  it("orients an edge by dragging between nearby endpoints with mouse or touch", () => {
-    const root = document.createElement("div");
+  it("orients an edge by dragging between nearby endpoints with mouse or touch", => {
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
-    const svg = root.querySelector<SVGSVGElement>(".graph-canvas")!;
+    svg := root.querySelector<SVGSVGElement>(".graph-canvas")!;
     Object.defineProperty(svg, "getScreenCTM", {
       configurable: true,
-      value: () => ({ inverse: () => ({}) }),
+      value: => ({ inverse: => ({}) })
     });
     Object.defineProperty(svg, "createSVGPoint", {
       configurable: true,
-      value: () => {
-        const point = {
+      value: => {
+        point := {
           x: 0,
           y: 0,
-          matrixTransform: () => ({ x: point.x, y: point.y }),
+          matrixTransform: => ({ point.{x,y} })
         };
         return point;
-      },
+      }
     });
-    const a = root.querySelector<SVGGElement>('[data-vertex-id="a"]')!;
-    const b = root.querySelector<SVGGElement>('[data-vertex-id="b"]')!;
-    const edge = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    Object.defineProperty(edge, "getTotalLength", { configurable: true, value: () => 224 });
+    a := root.querySelector<SVGGElement>('[data-vertex-id="a"]')!;
+    b := root.querySelector<SVGGElement>('[data-vertex-id="b"]')!;
+    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
+    Object.defineProperty(edge, "getTotalLength", { configurable: true, value: => 224 });
     Object.defineProperty(edge, "getPointAtLength", {
       configurable: true,
-      value: (length: number) => ({ x: 288 + length, y: 135 }),
+      value: (length: number) => ({ x: 288 + length, y: 135 })
     });
 
-    const dispatchPointer = (
+    dispatchPointer := (
       element: SVGElement,
       type: string,
       x: number,
       y: number,
-      pointerType = "mouse",
+      pointerType = "mouse"
     ) => {
-      const event = new MouseEvent(type, {
+      event := new MouseEvent(type, {
         bubbles: true,
         cancelable: true,
         button: 0,
         clientX: x,
-        clientY: y,
+        clientY: y
       });
       Object.defineProperties(event, {
         pointerId: { value: 9 },
         isPrimary: { value: true },
-        pointerType: { value: pointerType },
+        pointerType: { value: pointerType }
       });
       element.dispatchEvent(event);
     };
 
-    const touchStart = new Event("touchstart", { bubbles: true, cancelable: true });
+    touchStart := new Event("touchstart", { bubbles: true, cancelable: true });
     a.dispatchEvent(touchStart);
     expect(touchStart.defaultPrevented).toBe(true);
 
@@ -227,15 +227,15 @@ describe("example selection", () => {
     dispatchPointer(a, "pointerup", 255, 135);
     expect(edge.getAttribute("aria-label")).toContain("toward a");
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     select.value = "synchronizer";
     select.dispatchEvent(new Event("change", { bubbles: true }));
-    const dangling = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
+    dangling := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
 
     dispatchPointer(svg, "pointerdown", 440, 280, "touch");
-    const canvasTouch = new Event("touchstart", { bubbles: true, cancelable: true });
+    canvasTouch := new Event("touchstart", { bubbles: true, cancelable: true });
     Object.defineProperty(canvasTouch, "touches", {
-      value: [{ clientX: 440, clientY: 280 }],
+      value: [{ clientX: 440, clientY: 280 }]
     });
     svg.dispatchEvent(canvasTouch);
     expect(canvasTouch.defaultPrevented).toBe(true);
@@ -249,54 +249,54 @@ describe("example selection", () => {
     expect(dangling.getAttribute("aria-label")).toContain("toward sync");
   });
 
-  it("uses the favicon artwork as the masthead brand mark", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("uses the favicon artwork as the masthead brand mark", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const mark = root.querySelector<HTMLImageElement>("img.brand-mark");
+    mark := root.querySelector<HTMLImageElement>("img.brand-mark");
     expect(mark?.getAttribute("src")).toBe("./favicon.svg");
     expect(mark?.getAttribute("alt")).toBe("");
     expect(root.querySelector("h1")?.getAttribute("aria-label")).toBe("Graph Orientation Playground");
     expect(root.querySelector(".title-small-caps")?.textContent).toBe("GRAPH ORIENTATION PLAYGROUND");
     expect(root.textContent).not.toContain("Interactive constraint lab");
-    const paper = root.querySelector<HTMLAnchorElement>(".paper-link")!;
+    paper := root.querySelector<HTMLAnchorElement>(".paper-link")!;
     expect(paper.href).toBe("https://arxiv.org/abs/2603.03488");
     expect(paper.textContent).toContain("Paper");
     expect(paper.textContent).not.toContain("Read the paper");
-    const github = root.querySelector<HTMLAnchorElement>(".github-link")!;
+    github := root.querySelector<HTMLAnchorElement>(".github-link")!;
     expect(github.href).toBe("https://github.com/edemaine/graph-orientation-visualizer");
     expect(github.textContent).toContain("GitHub");
     expect(github.querySelector(".github-icon")).not.toBeNull();
   });
 
-  it("toggles and remembers the color theme", () => {
-    const root = document.createElement("div");
+  it("toggles and remembers the color theme", => {
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
-    const toggle = root.querySelector<HTMLButtonElement>(".theme-toggle")!;
-    const initial = document.documentElement.dataset.theme;
-    expect(toggle.getAttribute("aria-pressed")).toBe(initial === "dark" ? "true" : "false");
+    toggle := root.querySelector<HTMLButtonElement>(".theme-toggle")!;
+    initial := document.documentElement.dataset.theme;
+    expect(toggle.getAttribute("aria-pressed")).toBe(initial is "dark" ? "true" : "false");
 
     toggle.click();
 
-    const changed = initial === "dark" ? "light" : "dark";
+    changed := initial is "dark" ? "light" : "dark";
     expect(document.documentElement.dataset.theme).toBe(changed);
     expect(window.localStorage.getItem("graph-orientation-theme")).toBe(changed);
-    expect(toggle.getAttribute("aria-pressed")).toBe(changed === "dark" ? "true" : "false");
-    expect(toggle.querySelector(".theme-toggle__icon")?.textContent).toBe(changed === "dark" ? "☾" : "☀");
+    expect(toggle.getAttribute("aria-pressed")).toBe(changed is "dark" ? "true" : "false");
+    expect(toggle.querySelector(".theme-toggle__icon")?.textContent).toBe(changed is "dark" ? "☾" : "☀");
     expect(toggle.querySelector(".theme-toggle__label")).toBeNull();
   });
 
-  it("replaces the selected example and SVG diagram without repeating its title", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("replaces the selected example and SVG diagram without repeating its title", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     expect(select.selectedOptions[0].textContent).toBe("Directed cycle");
     expect([...select.querySelectorAll("optgroup")].map(({ label }) => label)).toEqual([
       "Full graphs",
-      "Paper gadgets",
+      "Paper gadgets"
     ]);
     expect(root.querySelector(".control-panel h2")).toBeNull();
     expect(root.querySelectorAll(".edge-hit")).toHaveLength(4);
@@ -308,24 +308,24 @@ describe("example selection", () => {
     expect(root.querySelectorAll(".edge-hit")).toHaveLength(5);
   });
 
-  it("renders Figure 4 edges along their orthogonal routes", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("renders Figure 4 edges along their orthogonal routes", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     select.value = "figure-4-one-in-three-go";
     select.dispatchEvent(new Event("change", { bubbles: true }));
 
-    const description = root.querySelector(".description")!;
+    description := root.querySelector(".description")!;
     expect([...description.querySelectorAll("i")].map(({ textContent }) => textContent)).toEqual([
-      "x", "y", "z̄", "x", "z", "w",
+      "x", "y", "z̄", "x", "z", "w"
     ]);
     expect(description.textContent).toContain("(x ∨ y ∨ z̄) ∧ (x ∨ z ∨ w)");
-    const source = description.querySelector<HTMLAnchorElement>(".description-source")!;
+    source := description.querySelector<HTMLAnchorElement>(".description-source")!;
     expect(source.textContent).toContain("View paper");
     expect(source.href).toBe("https://dspace.jaist.ac.jp/dspace/bitstream/10119/15100/4/23092.pdf");
     expect(source.target).toBe("_blank");
-    const vertexTypeRows = root.querySelectorAll(".vertex-type-list .vertex-type");
+    vertexTypeRows := root.querySelectorAll(".vertex-type-list .vertex-type");
     expect(vertexTypeRows).toHaveLength(3);
     expect(root.querySelectorAll(".vertex-type-symbol > span")).toHaveLength(3);
     expect(root.querySelector(".vertex-types table")).toBeNull();
@@ -335,59 +335,59 @@ describe("example selection", () => {
     expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain("1∕3");
     expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain("2∕3");
     expect(root.querySelectorAll(".vertex-annotation")).toHaveLength(16);
-    const clauseLabel = [...root.querySelectorAll<SVGTextElement>(".vertex-annotation")]
-      .find(({ textContent }) => textContent === "C₁")!;
+    clauseLabel := [...root.querySelectorAll<SVGTextElement>(".vertex-annotation")]
+      .find(({ textContent }) => textContent is "C₁")!;
     expect([...clauseLabel.querySelectorAll("tspan")].map((span) => [
       span.textContent,
-      span.getAttribute("font-style"),
+      span.getAttribute "font-style"
     ])).toEqual([["C", "italic"], ["₁", "normal"]]);
     expect(clauseLabel.closest(".vertex")?.getAttribute("aria-label")).toMatch(/^C₁,/);
     expect(root.querySelector('.vertex[aria-label*="<i>"]')).toBeNull();
     expect(root.querySelectorAll(".vertex-body")).toHaveLength(16);
     expect(root.querySelector(".vertex-shape rect")).toBeNull();
 
-    const outerCycleEdge = root.querySelector<SVGPathElement>(
-      '.edge-hit[aria-label^="x-between-2:"]',
+    outerCycleEdge := root.querySelector<SVGPathElement>(
+      '.edge-hit[aria-label^="x-between-2:"]'
     );
     expect(outerCycleEdge?.getAttribute("d")).toBe(
-      "M 903 60 L 1430 60 L 1430 140 L 70 140 L 70 60 L 117 60",
+      "M 903 60 L 1430 60 L 1430 140 L 70 140 L 70 60 L 117 60"
     );
 
-    const literalPairEdge = root.querySelector<SVGPathElement>(
-      '.edge-hit[aria-label^="x-pair-1:"]',
+    literalPairEdge := root.querySelector<SVGPathElement>(
+      '.edge-hit[aria-label^="x-pair-1:"]'
     );
     expect(literalPairEdge?.getAttribute("d")).toBe("M 183 60 L 197 60");
   });
 
-  it("places vertex feedback after the vertex type table", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("places vertex feedback after the vertex type table", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const types = root.querySelector(".vertex-types")!;
-    const feedback = root.querySelector(".legend")!;
+    types := root.querySelector(".vertex-types")!;
+    feedback := root.querySelector(".legend")!;
     expect(types.parentElement?.classList.contains("vertex-info")).toBe(true);
     expect(feedback.parentElement).toBe(types.parentElement);
     expect(feedback.querySelector("h3")).toBeNull();
     expect(feedback.querySelectorAll(".legend-grid > span")).toHaveLength(4);
     expect(types.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
 
-    const status = root.querySelector(".state-card")!;
-    const howTo = root.querySelector(".how-to")!;
+    status := root.querySelector(".state-card")!;
+    howTo := root.querySelector(".how-to")!;
     expect(feedback.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(status.compareDocumentPosition(howTo) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
-  it("applies one round of forced vertices as a single history action", () => {
-    const root = document.createElement("div");
+  it("applies one round of forced vertices as a single history action", => {
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
-    const edge = (id: string) => {
+    edge := (id: string) => {
       return root.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${id}"]`)!;
     };
     edge("ab").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
-    const apply = root.querySelector<HTMLButtonElement>(".state-card__apply")!;
+    apply := root.querySelector<HTMLButtonElement>(".state-card__apply")!;
     expect(apply.textContent).toContain("Apply all forced edges");
     expect(root.querySelector(".state-card")?.textContent).toContain("2 forced vertices");
 
@@ -403,25 +403,25 @@ describe("example selection", () => {
     expect(edge("da").getAttribute("aria-label")).toContain("unoriented");
   });
 
-  it("groups edge visuals before their interaction target for the focus glow", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("groups edge visuals before their interaction target for the focus glow", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const edge = root.querySelector(".edge-group")!;
-    const visual = edge.querySelector(".edge-visual")!;
-    const hit = edge.querySelector(".edge-hit")!;
+    edge := root.querySelector(".edge-group")!;
+    visual := edge.querySelector(".edge-visual")!;
+    hit := edge.querySelector(".edge-hit")!;
 
     expect(visual.querySelector(".edge-base")).not.toBeNull();
     expect(visual.compareDocumentPosition(hit) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(edge.querySelector(".edge-selection")).toBeNull();
   });
 
-  it("keeps edge progress in the footer below the graph", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("keeps edge progress in the footer below the graph", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const frame = root.querySelector(".graph-frame")!;
-    const footer = root.querySelector(".canvas-footer")!;
+    frame := root.querySelector(".graph-frame")!;
+    footer := root.querySelector(".canvas-footer")!;
 
     expect(frame.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(footer.querySelector(".counter")?.textContent).toContain("0 / 4 edges");
@@ -432,14 +432,14 @@ describe("example selection", () => {
     expect(root.querySelector(".canvas-toolbar")).toBeNull();
   });
 
-  it("undoes and redoes orientation history with buttons and keyboard shortcuts", () => {
-    const root = document.createElement("div");
+  it("undoes and redoes orientation history with buttons and keyboard shortcuts", => {
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
-    const edge = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    const undo = root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!;
-    const redo = root.querySelector<HTMLButtonElement>('[aria-label="Redo orientation change"]')!;
+    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
+    undo := root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!;
+    redo := root.querySelector<HTMLButtonElement>('[aria-label="Redo orientation change"]')!;
     expect(undo.disabled).toBe(true);
     expect(redo.disabled).toBe(true);
 
@@ -470,25 +470,25 @@ describe("example selection", () => {
     undo.click();
     expect(edge.getAttribute("aria-label")).toContain("toward b");
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     select.value = "k4-puzzle";
     select.dispatchEvent(new Event("change", { bubbles: true }));
     expect(undo.disabled).toBe(true);
     expect(redo.disabled).toBe(true);
   });
 
-  it("serializes a standalone SVG with only graph styles", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
-    const canvas = root.querySelector<SVGSVGElement>(".graph-canvas")!;
+  it("serializes a standalone SVG with only graph styles", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
+    canvas := root.querySelector<SVGSVGElement>(".graph-canvas")!;
     canvas.style.setProperty("--primary", "1 2 3");
 
-    const serialized = serializeGraphSvg(canvas, "dark");
+    serialized := serializeGraphSvg(canvas, "dark");
 
     expect(serialized.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')).toBe(true);
-    const parsed = new DOMParser().parseFromString(serialized, "image/svg+xml");
+    parsed := new DOMParser().parseFromString(serialized, "image/svg+xml");
     expect(parsed.querySelector("parsererror")).toBeNull();
-    const svg = parsed.documentElement;
+    svg := parsed.documentElement;
     expect(svg.namespaceURI).toBe("http://www.w3.org/2000/svg");
     expect(svg.getAttribute("data-theme")).toBe("dark");
     expect(svg.getAttribute("width")).toBe("800");
@@ -500,15 +500,15 @@ describe("example selection", () => {
     expect(svg.querySelectorAll(".edge-hit")).toHaveLength(4);
   });
 
-  it("downloads the current example with an SVG filename and MIME type", () => {
-    const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:graph-svg");
-    let filename: string | undefined;
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      filename = this.download;
+  it("downloads the current example with an SVG filename and MIME type", => {
+    createObjectURL := vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:graph-svg");
+    let filename: string?;
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (@: HTMLAnchorElement) {
+      filename = @download;
     });
-    const root = document.createElement("div");
+    root := document.createElement("div");
     document.body.append(root);
-    dispose = render(() => <Visualizer />, root);
+    dispose = render(=> <Visualizer />, root);
 
     root.querySelector<HTMLButtonElement>(".download-button")!.click();
 
@@ -518,23 +518,23 @@ describe("example selection", () => {
     expect(filename).toBe("cycle-tutorial.svg");
   });
 
-  it("marks the two pairs of synchronizer ports", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("marks the two pairs of synchronizer ports", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     select.value = "synchronizer";
     select.dispatchEvent(new Event("change", { bubbles: true }));
 
-    const vertex = root.querySelector(".vertex")!;
-    const north = root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
+    vertex := root.querySelector(".vertex")!;
+    north := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
     expect(vertex.querySelector(".vertex-label--single-character")?.textContent).toBe("S");
     expect(vertex.querySelectorAll(".port-pair-label--0")).toHaveLength(2);
     expect(vertex.querySelectorAll(".port-pair-label--1")).toHaveLength(2);
     expect([...vertex.querySelectorAll(".port-pair-label")].map(({ textContent }) => textContent)).toEqual(["+", "+", "−", "−"]);
 
-    const body = vertex.querySelector(".vertex-body")!;
-    const firstPortLabel = vertex.querySelector(".port-pair-label")!;
+    body := vertex.querySelector(".vertex-body")!;
+    firstPortLabel := vertex.querySelector(".port-pair-label")!;
     expect(vertex.querySelector(".vertex-shape")?.contains(body)).toBe(true);
     expect(body.compareDocumentPosition(firstPortLabel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(root.querySelector(".vertex-types")?.textContent).toContain("The + ports agree");
@@ -542,11 +542,11 @@ describe("example selection", () => {
     expect(north.getAttribute("d")).toBe("M 400 247 L 400 70");
   });
 
-  it("enlarges the alternator's one-character label", () => {
-    const root = document.createElement("div");
-    dispose = render(() => <Visualizer />, root);
+  it("enlarges the alternator's one-character label", => {
+    root := document.createElement("div");
+    dispose = render(=> <Visualizer />, root);
 
-    const select = root.querySelector<HTMLSelectElement>("#example")!;
+    select := root.querySelector<HTMLSelectElement>("#example")!;
     select.value = "alternator";
     select.dispatchEvent(new Event("change", { bubbles: true }));
 

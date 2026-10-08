@@ -1,0 +1,6 @@
+{
+  "preset": "civet-idiomatic",
+  "rules": {
+    "style/no-trailing-semicolons": "off"
+  }
+}
