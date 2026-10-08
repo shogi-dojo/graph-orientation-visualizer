@@ -450,7 +450,7 @@ export function Visualizer()
         if (not edge or not path or path.getTotalLength !<? "function") continue
         location := closestPathLocation(path, point)
         if location.distance <= EDGE_HIT_RADIUS
-          candidates.push({ edge, ...location, source: "edge" })
+          candidates.push { edge, ...location, source: "edge" }
     return candidates
 
   resolveDrag := (event: PointerEvent) =>
