@@ -373,7 +373,7 @@ export function Visualizer()
   commitDirections := (update: DirectionUpdate) => {
     current := directions();
     next := update <? "function" ? update(current) : update;
-    if (directionsEqual(current, next)) return;
+    if directionsEqual(current, next) then return;
     batch(=> {
       setUndoStack((stack) => [...stack, current]);
       setRedoStack([]);
@@ -442,7 +442,7 @@ export function Visualizer()
 
   applyForcedAt := (vertex: Vertex) => {
     forced := analyses()[vertex.id].forced;
-    if (forced.size is 0) return;
+    if forced.size is 0 then return;
     commitDirections((current) => {
       next := { ...current };
       forced.forEach((direction, edgeId) => { next[edgeId] = direction; });
@@ -564,7 +564,7 @@ export function Visualizer()
   };
 
   beginDrag := (event: PointerEvent) => {
-    if (activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas) return;
+    if activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas then return;
     candidates := dragCandidatesAt(event);
     startVertex := (event.target as Element | null)?.closest?.("[data-vertex-id]") as SVGGElement | null;
     startVertexId := startVertex?.dataset.vertexId;
@@ -575,7 +575,7 @@ export function Visualizer()
           return "vertex" in end and end.vertex is startVertexId;
         })
       : candidates;
-    if (filtered# is 0) return;
+    if filtered# is 0 then return;
     startPath := (event.target as Element | null)?.closest?.(".edge-hit") as SVGPathElement | null;
     activeDrag = {
       event.pointerId,
@@ -728,7 +728,7 @@ export function Visualizer()
   groups := ["Full graphs", "Paper gadgets"] as const;
 
   handleHistoryKeyDown := (event: KeyboardEvent) => {
-    if (event.defaultPrevented or event.altKey or (not event.ctrlKey and not event.metaKey)) return;
+    if event.defaultPrevented or event.altKey or (not event.ctrlKey and not event.metaKey) then return;
     target := event.target;
     if (
       target instanceof HTMLInputElement or
@@ -784,7 +784,7 @@ export function Visualizer()
             <span .title-small-caps aria-hidden="true">
               <span><span .title-initial>G</span>RAPH</span>{" "}
               <span><span .title-initial>O</span>RIENTATION</span>{" "}
-              <span><span .title-initial>P</span>LAYGROUND
+              <span><span .title-initial>P</span>LAYGROUND</span>
         <div .masthead-actions>
           <button
             class="theme-toggle"
@@ -796,8 +796,8 @@ export function Visualizer()
           >
             <span .theme-toggle__icon aria-hidden="true">{theme() is "dark" ? "☾" : "☀"}
           <a .masthead-link.paper-link href="https://arxiv.org/abs/2603.03488" target="_blank" rel="noreferrer">
-            <span .masthead-link__label>Paper
-            <span .external-arrow aria-hidden="true">↗
+            <span .masthead-link__label>Paper</span>
+            <span .external-arrow aria-hidden="true">↗</span>
           <a
             class="masthead-link github-link"
             href="https://github.com/edemaine/graph-orientation-visualizer"
@@ -806,13 +806,13 @@ export function Visualizer()
           >
             <svg .github-icon viewBox="0 0 16 16" aria-hidden="true">
               <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 6.32c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z">
-            <span .masthead-link__label>GitHub
-            <span .external-arrow aria-hidden="true">↗
+            <span .masthead-link__label>GitHub</span>
+            <span .external-arrow aria-hidden="true">↗</span>
 
       <main .workspace>
         <aside .control-panel aria-label="Visualizer controls">
           <section>
-            <label .field-label for="example">Example
+            <label .field-label for="example">Example</label>
             <div .select-wrap>
               <select #example value={selectedId()} onChange={(event) => chooseExample(event.currentTarget.value)}>
                 <For each=groups>{(group) => (
@@ -827,12 +827,12 @@ export function Visualizer()
               )}
               <Show when={selectedGraph().source}>{(source) => (
                 <a .description-source href={source().url} target="_blank" rel="noreferrer">
-                  {source().label} <span aria-hidden="true">↗
+                  {source().label} <span aria-hidden="true">↗</span>
               )}
 
           <div .vertex-info>
             <section .vertex-types>
-              <h3>Vertex types
+              <h3>Vertex types</h3>
               <dl .vertex-type-list aria-label="Vertex types in this example">
                 <For each={vertexTypes()}>{({ symbol, rule }) => (
                   <div .vertex-type>
@@ -842,10 +842,10 @@ export function Visualizer()
 
             <section .legend aria-label="Vertex state legend">
               <div .legend-grid>
-                <span><i .dot.dot--open />Open
-                <span><i .dot.dot--forced />Forced
-                <span><i .dot.dot--satisfied />Satisfied
-                <span><i .dot.dot--impossible />Impossible
+                <span><i .dot.dot--open />Open</span>
+                <span><i .dot.dot--forced />Forced</span>
+                <span><i .dot.dot--satisfied />Satisfied</span>
+                <span><i .dot.dot--impossible />Impossible</span>
 
           <section class={`state-card state-card--${stateSummary().tone}`} aria-live="polite">
             <div .state-card__icon aria-hidden="true">
@@ -858,7 +858,7 @@ export function Visualizer()
                 Apply all forced edges
 
           <section .how-to>
-            <h3>How to play
+            <h3>How to play</h3>
             <ol>
               <li><span .step-number>1</span><span>Click near an endpoint, or swipe along an edge, to orient it.</span></li>
               <li><span .step-number>2</span><span>Click its middle third to remove the arrow.</span></li>
@@ -1052,10 +1052,10 @@ export function Visualizer()
                   );
                 }}
             <Show when={progress().solved}>
-              <div .victory-toast role="status"><span>✓</span> Orientation complete
+              <div .victory-toast role="status"><span>✓</span> Orientation complete</div>
           <div .canvas-footer>
             <div .canvas-history>
-              <span .counter><strong>{progress().oriented}</strong> / {selectedGraph().edges#} edges
+              <span .counter><strong>{progress().oriented}</strong> / {selectedGraph().edges#} edges</span>
               <div .history-controls role="group" aria-label="Orientation history">
                 <button
                   class="history-button"
@@ -1065,7 +1065,7 @@ export function Visualizer()
                   title={`Undo (${historyModifier} + Z)`}
                   onClick=undo
                 >
-                  <span aria-hidden="true">↶</span><span .history-button__label>Undo
+                  <span aria-hidden="true">↶</span><span .history-button__label>Undo</span>
                 <button
                   class="history-button"
                   type="button"
@@ -1076,14 +1076,14 @@ export function Visualizer()
                     : "Redo (Ctrl + Y)"}
                   onClick=redo
                 >
-                  <span aria-hidden="true">↷</span><span .history-button__label>Redo
+                  <span aria-hidden="true">↷</span><span .history-button__label>Redo</span>
             <p .keyboard-note>
               Keyboard: <kbd>Enter</kbd> cycles, <kbd>Delete</kbd> clears, {" "}
               <Show
                 when=usesCommandKey
                 fallback={<span><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo.</span>}
               >
-                <span><kbd>Command</kbd>+<kbd>Z</kbd> undo, <kbd>Command</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.
+                <span><kbd>Command</kbd>+<kbd>Z</kbd> undo, <kbd>Command</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</span>
             <button .download-button type="button" onClick=downloadSvg>
               <span aria-hidden="true">↓</span> Download SVG
   );

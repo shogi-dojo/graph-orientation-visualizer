@@ -147,7 +147,7 @@ export analyzeVertex := (
     for (const edge of graph.edges) {
       local := incidences.filter((incidence) => incidence.edge.id is edge.id);
       if local# is 2 and directions[edge.id] === null
-        if (bitAt(pattern, local[0].port) is bitAt(pattern, local[1].port)) return false;
+        if bitAt(pattern, local[0].port) is bitAt(pattern, local[1].port) then return false;
     }
     return true;
   });
