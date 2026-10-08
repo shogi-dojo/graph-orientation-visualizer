@@ -1,69 +1,69 @@
-export type EdgeDirection = 0 | 1 | null;
+export type EdgeDirection = 0 | 1 | null
 
 export interface Constraint {
-  name: string;
-  shortLabel: string;
-  degree: number;
-  allowed: number[];
-  portGroups?: number[];
+  name: string
+  shortLabel: string
+  degree: number
+  allowed: number[]
+  portGroups?: number[]
 }
 
 export interface Vertex {
-  id: string;
-  x: number;
-  y: number;
-  constraint: Constraint;
-  label?: string;
+  id: string
+  x: number
+  y: number
+  constraint: Constraint
+  label?: string
   annotation?: {
-    text: string;
-    corner?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
-  };
+    text: string
+    corner?: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  }
 }
 
 export interface VertexEnd {
-  vertex: string;
-  port: number;
+  vertex: string
+  port: number
 }
 
 export interface FreeEnd {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
-export type EdgeEnd = VertexEnd | FreeEnd;
+export type EdgeEnd = VertexEnd | FreeEnd
 
 export interface Edge {
-  id: string;
-  ends: [EdgeEnd, EdgeEnd];
-  control?: { x: number; y: number };
-  route?: { x: number; y: number }[];
+  id: string
+  ends: [EdgeEnd, EdgeEnd]
+  control?: { x: number; y: number }
+  route?: { x: number; y: number }[]
 }
 
 export interface GraphDefinition {
-  id: string;
-  group: "Full graphs" | "Paper gadgets";
-  title: string;
-  description: string;
-  source?: { label: string; url: string };
-  vertices: Vertex[];
-  edges: Edge[];
-  viewBox?: [number, number, number, number];
+  id: string
+  group: "Full graphs" | "Paper gadgets"
+  title: string
+  description: string
+  source?: { label: string; url: string }
+  vertices: Vertex[]
+  edges: Edge[]
+  viewBox?: [number, number, number, number]
 }
 
 export interface Incidence {
-  edge: Edge;
-  endIndex: 0 | 1;
-  port: number;
+  edge: Edge
+  endIndex: 0 | 1
+  port: number
 }
 
-export type VertexState = "open" | "forced" | "satisfied" | "impossible";
+export type VertexState = "open" | "forced" | "satisfied" | "impossible"
 
 export interface VertexAnalysis {
-  state: VertexState;
-  compatible: number[];
-  forced: Map<string, 0 | 1>;
-  assignedPorts: number;
-  totalPorts: number;
+  state: VertexState
+  compatible: number[]
+  forced: Map<string, 0 | 1>
+  assignedPorts: number
+  totalPorts: number
 }
 
 export symmetricConstraint := (
@@ -71,17 +71,17 @@ export symmetricConstraint := (
   incomingCounts: number[],
   shortLabel = `${incomingCounts.join(",")}∕${degree}`
 ): Constraint => {
-  const allowed: number[] = [];
+  const allowed: number[] = []
   for (let mask = 0; mask < 2 ** degree; mask += 1) {
-    count .= 0;
-    for (let bit = 0; bit < degree; bit += 1) count += (mask >> bit) & 1;
-    if (count is in incomingCounts) allowed.push(mask);
+    count .= 0
+    for (let bit = 0; bit < degree; bit += 1) count += (mask >> bit) & 1
+    if (count is in incomingCounts) allowed.push(mask)
   }
   countName := incomingCounts# is 1
     ? `${incomingCounts[0]}-in-${degree}`
-    : `{${incomingCounts.join(",")}}-in-${degree}`;
-  return { name: countName, shortLabel, degree, allowed };
-};
+    : `{${incomingCounts.join(",")}}-in-${degree}`
+  return { name: countName, shortLabel, degree, allowed }
+}
 
 export relationConstraint := (
   degree: number,
@@ -91,7 +91,7 @@ export relationConstraint := (
   portGroups?: number[]
 ): Constraint => {
   if (portGroups and portGroups# is not degree) {
-    throw new Error(`${name} must assign a group to all ${degree} ports`);
+    throw new Error(`${name} must assign a group to all ${degree} ports`)
   }
   return {
     name,
@@ -100,7 +100,7 @@ export relationConstraint := (
     portGroups,
     allowed: bitPatterns.map((pattern) => {
       if (pattern# is not degree or /[^01]/.test(pattern)) {
-        throw new Error(`Invalid ${name} bit pattern: ${pattern}`);
+        throw new Error(`Invalid ${name} bit pattern: ${pattern}`)
       }
       return [...pattern].reduce(
         (mask, value, port) => mask | (Number(value) << port),
@@ -108,75 +108,75 @@ export relationConstraint := (
       );
     })
   };
-};
+}
 
 export emptyDirections := (graph: GraphDefinition): Record<string, EdgeDirection> => {
-  return Object.fromEntries(graph.edges.map((edge) => [edge.id, null]));
-};
+  return Object.fromEntries(graph.edges.map((edge) => [edge.id, null]))
+}
 
 export incidencesAt := (graph: GraphDefinition, vertexId: string): Incidence[] => {
-  const incidences: Incidence[] = [];
+  const incidences: Incidence[] = []
   for (const edge of graph.edges) {
     edge.ends.forEach((end, index) => {
       if ("vertex" in end and end.vertex is vertexId) {
         incidences.push({ edge, endIndex: index as 0 | 1, end.port });
       }
-    });
+    })
   }
-  return incidences.sort((a, b) => a.port - b.port);
-};
+  return incidences.sort((a, b) => a.port - b.port)
+}
 
 bitAt := (pattern: number, port: number): 0 | 1 => {
   return ((pattern >> port) & 1) as 0 | 1;
-};
+}
 
 export analyzeVertex := (
   graph: GraphDefinition,
   directions: Record<string, EdgeDirection>,
   vertex: Vertex
 ): VertexAnalysis => {
-  incidences := incidencesAt(graph, vertex.id);
+  incidences := incidencesAt(graph, vertex.id)
   compatible := vertex.constraint.allowed.filter((pattern) => {
     for (const incidence of incidences) {
-      direction := directions[incidence.edge.id] ?? null;
+      direction := directions[incidence.edge.id] ?? null
       if direction !== null and bitAt(pattern, incidence.port) is not Number(direction is incidence.endIndex)
-        return false;
+        return false
     }
 
     // The two incidences of an unoriented self-loop must receive opposite bits.
     for (const edge of graph.edges) {
-      local := incidences.filter((incidence) => incidence.edge.id is edge.id);
+      local := incidences.filter((incidence) => incidence.edge.id is edge.id)
       if local# is 2 and directions[edge.id] === null
-        if bitAt(pattern, local[0].port) is bitAt(pattern, local[1].port) then return false;
+        if bitAt(pattern, local[0].port) is bitAt(pattern, local[1].port) then return false
     }
-    return true;
-  });
+    return true
+  })
 
-  forced := new Map<string, 0 | 1>();
+  forced := new Map<string, 0 | 1>()
   if (compatible# > 0) {
     unorientedEdges := new Set(
       incidences
         .filter(({ edge }) => directions[edge.id] === null)
         .map(({ edge }) => edge.id)
-    );
+    )
     for edgeId of unorientedEdges
-      local := incidences.filter(({ edge }) => edge.id is edgeId);
-      implied := new Set<0 | 1>();
+      local := incidences.filter(({ edge }) => edge.id is edgeId)
+      implied := new Set<0 | 1>()
       for pattern of compatible
-        first := local[0];
-        implied.add(bitAt(pattern, first.port) ? first.endIndex : (1 - first.endIndex) as 0 | 1);
-      if (implied.size is 1) forced.set(edgeId, [...implied][0]);
+        first := local[0]
+        implied.add(bitAt(pattern, first.port) ? first.endIndex : (1 - first.endIndex) as 0 | 1)
+      if (implied.size is 1) forced.set(edgeId, [...implied][0])
   }
 
-  assignedPorts := incidences.filter(({ edge }) => directions[edge.id] !== null)#;
-  complete := assignedPorts is incidences#;
+  assignedPorts := incidences.filter(({ edge }) => directions[edge.id] !== null)#
+  complete := assignedPorts is incidences#
   const state: VertexState = compatible# is 0
     ? "impossible"
     : complete
       ? "satisfied"
       : forced.size > 0
         ? "forced"
-        : "open";
+        : "open"
 
   return {
     state,
@@ -185,33 +185,33 @@ export analyzeVertex := (
     assignedPorts,
     totalPorts: incidences#
   };
-};
+}
 
 export validateGraph := (graph: GraphDefinition): string[] => {
-  const errors: string[] = [];
-  vertexIds := new Set(graph.vertices.map(({ id }) => id));
-  edgeIds := new Set<string>();
+  const errors: string[] = []
+  vertexIds := new Set(graph.vertices.map(({ id }) => id))
+  edgeIds := new Set<string>()
 
   for (const edge of graph.edges) {
-    if (edgeIds.has(edge.id)) errors.push(`Duplicate edge id ${edge.id}`);
-    edgeIds.add(edge.id);
-    if (edge.control and edge.route) errors.push(`Edge ${edge.id} cannot have both a control point and a route`);
+    if (edgeIds.has(edge.id)) errors.push(`Duplicate edge id ${edge.id}`)
+    edgeIds.add edge.id
+    if (edge.control and edge.route) errors.push(`Edge ${edge.id} cannot have both a control point and a route`)
     edge.ends.forEach((end) => {
       if ("vertex" in end and not vertexIds.has(end.vertex)) {
         errors.push(`Edge ${edge.id} refers to missing vertex ${end.vertex}`);
       }
-    });
+    })
   }
 
   for (const vertex of graph.vertices) {
-    incidences := incidencesAt(graph, vertex.id);
+    incidences := incidencesAt(graph, vertex.id)
     unless incidences# is vertex.constraint.degree
-      errors.push(`${vertex.id} has ${incidences.length} incidences, expected ${vertex.constraint.degree}`);
-    ports := incidences.map(({ port }) => port).sort((a, b) => a - b);
+      errors.push `${vertex.id} has ${incidences.length} incidences, expected ${vertex.constraint.degree}`
+    ports := incidences.map(({ port }) => port).sort((a, b) => a - b)
     if ports.some((port, index) => port is not index)
-      errors.push(`${vertex.id} ports must be numbered 0 through ${vertex.constraint.degree - 1}`);
+      errors.push `${vertex.id} ports must be numbered 0 through ${vertex.constraint.degree - 1}`
     if vertex.constraint.portGroups and vertex.constraint.portGroups# is not vertex.constraint.degree
-      errors.push(`${vertex.id} must assign a group to every port`);
+      errors.push `${vertex.id} must assign a group to every port`
   }
-  return errors;
-};
+  return errors
+}

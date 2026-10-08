@@ -1,42 +1,42 @@
-{ afterEach, describe, expect, it, vi } from vitest;
-{ render } from solid-js/web;
+{ afterEach, describe, expect, it, vi } from vitest
+{ render } from solid-js/web
 {
   Visualizer,
   contradictionSummary,
   edgeSwipeDirection,
   platformUsesCommandKey,
   serializeGraphSvg
-} from ../src/Visualizer.civet;
+} from ../src/Visualizer.civet
 
-let dispose: (() => void) | undefined;
+let dispose: (() => void) | undefined
 
-afterEach(=> {
-  vi.restoreAllMocks();
-  dispose?.();
-  dispose = undefined;
-  window.localStorage.clear();
-  delete document.documentElement.dataset.theme;
+afterEach => {
+  vi.restoreAllMocks()
+  dispose?.()
+  dispose = undefined
+  window.localStorage.clear()
+  delete document.documentElement.dataset.theme
   document.body.replaceChildren();
-});
+}
 
-describe("example selection", => {
+describe "example selection", => {
   it("distinguishes violated vertices from incomplete contradictions", => {
-    expect(contradictionSummary(1, 0)).toBe("1 vertex is violated.");
-    expect(contradictionSummary(0, 2)).toBe("2 vertices have no possible completion.");
+    expect(contradictionSummary(1, 0)).toBe "1 vertex is violated."
+    expect(contradictionSummary(0, 2)).toBe "2 vertices have no possible completion."
     expect(contradictionSummary(1, 2)).toBe(
       "1 vertex is violated. 2 vertices have no possible completion."
-    );
+    )
 
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
-    ab := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    da := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="da:"]')!;
-    ab.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    da.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    da.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
+    ab := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!
+    da := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="da:"]')!
+    ab.dispatchEvent new KeyboardEvent "keydown", { key: "Enter", bubbles: true }
+    da.dispatchEvent new KeyboardEvent "keydown", { key: "Enter", bubbles: true }
+    da.dispatchEvent new KeyboardEvent "keydown", { key: "Enter", bubbles: true }
 
-    expect(root.querySelector(".state-card")?.textContent).toContain("1 vertex is violated.");
+    expect(root.querySelector(".state-card")?.textContent).toContain "1 vertex is violated."
     expect(root.querySelector(".state-card")?.textContent).not.toContain("no possible completion");
   });
 
@@ -48,51 +48,50 @@ describe("example selection", => {
   });
 
   it("uses Command shortcut labels on Apple platforms", => {
-    expect(platformUsesCommandKey("MacIntel")).toBe(true);
-    expect(platformUsesCommandKey("macOS")).toBe(true);
-    expect(platformUsesCommandKey("Win32")).toBe(false);
-    vi.spyOn(window.navigator, "platform", "get").mockReturnValue("MacIntel");
+    expect(platformUsesCommandKey("MacIntel")).toBe true
+    expect(platformUsesCommandKey("macOS")).toBe true
+    expect(platformUsesCommandKey("Win32")).toBe false
+    vi.spyOn(window.navigator, "platform", "get").mockReturnValue "MacIntel"
 
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    keyboardNote := root.querySelector(".keyboard-note")!;
-    expect(keyboardNote.textContent).toContain("Command+Z undo");
-    expect(keyboardNote.textContent).toContain("Command+Shift+Z redo");
-    expect(keyboardNote.textContent).not.toContain("Ctrl");
+    keyboardNote := root.querySelector(".keyboard-note")!
+    expect(keyboardNote.textContent).toContain "Command+Z undo"
+    expect(keyboardNote.textContent).toContain "Command+Shift+Z redo"
+    expect(keyboardNote.textContent).not.toContain "Ctrl"
     expect(root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')?.title)
-      .toBe("Undo (Command + Z)");
+      .toBe "Undo (Command + Z)"
     expect(root.querySelector<HTMLButtonElement>('[aria-label="Redo orientation change"]')?.title)
       .toBe("Redo (Command + Shift + Z)");
   });
 
   it("orients an edge by dragging and suppresses the following synthetic click", => {
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
-    path := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    svg := path.ownerSVGElement!;
+    path := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!
+    svg := path.ownerSVGElement!
     Object.defineProperty(svg, "getScreenCTM", {
       configurable: true,
       value: => ({ inverse: => ({}) })
-    });
+    })
     Object.defineProperty(svg, "createSVGPoint", {
       configurable: true,
       value: => {
-        point := {
+        point :=
           x: 0,
           y: 0,
           matrixTransform: => ({ point.{x,y} })
-        };
-        return point;
+        return point
       }
-    });
-    Object.defineProperty(path, "getTotalLength", { configurable: true, value: => 100 });
+    })
+    Object.defineProperty path, "getTotalLength", { configurable: true, value: => 100 }
     Object.defineProperty(path, "getPointAtLength", {
       configurable: true,
       value: (length: number) => ({ x: length, y: 0 })
-    });
+    })
 
     dispatchPointer := (type: string, x: number, pointerType = "mouse") => {
       event := new MouseEvent(type, {
@@ -101,81 +100,80 @@ describe("example selection", => {
         button: 0,
         clientX: x,
         clientY: 0
-      });
+      })
       Object.defineProperties(event, {
         pointerId: { value: 7 },
         isPrimary: { value: true },
         pointerType: { value: pointerType }
-      });
+      })
       path.dispatchEvent(event);
-    };
+    }
 
-    touchStart := new Event("touchstart", { bubbles: true, cancelable: true });
-    path.dispatchEvent(touchStart);
-    expect(touchStart.defaultPrevented).toBe(true);
+    touchStart := new Event("touchstart", { bubbles: true, cancelable: true })
+    path.dispatchEvent touchStart
+    expect(touchStart.defaultPrevented).toBe true
 
-    dispatchPointer("pointerdown", 75);
-    dispatchPointer("pointerup", 95);
-    expect(path.getAttribute("aria-label")).toContain("toward b");
-    dispatchPointer("pointerdown", 40);
-    dispatchPointer("pointerup", 60);
-    expect(path.getAttribute("aria-label")).toContain("unoriented");
+    dispatchPointer "pointerdown", 75
+    dispatchPointer "pointerup", 95
+    expect(path.getAttribute("aria-label")).toContain "toward b"
+    dispatchPointer "pointerdown", 40
+    dispatchPointer "pointerup", 60
+    expect(path.getAttribute("aria-label")).toContain "unoriented"
 
-    dispatchPointer("pointerdown", 20);
-    dispatchPointer("pointermove", 55);
-    expect(root.querySelector(".edge-preview--directed")).not.toBeNull();
-    expect(root.querySelector(".edge-hover")).toBeNull();
-    dispatchPointer("pointerup", 80);
-    expect(path.getAttribute("aria-label")).toContain("toward b");
-    path.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 60, clientY: 0 }));
-    expect(path.getAttribute("aria-label")).toContain("toward b");
+    dispatchPointer "pointerdown", 20
+    dispatchPointer "pointermove", 55
+    expect(root.querySelector(".edge-preview--directed")).not.toBeNull()
+    expect(root.querySelector(".edge-hover")).toBeNull()
+    dispatchPointer "pointerup", 80
+    expect(path.getAttribute("aria-label")).toContain "toward b"
+    path.dispatchEvent new MouseEvent "click", { bubbles: true, clientX: 60, clientY: 0 }
+    expect(path.getAttribute("aria-label")).toContain "toward b"
 
-    dispatchPointer("pointermove", 90);
-    preview := root.querySelector<SVGPathElement>(".edge-preview--directed")!;
-    expect(preview).not.toBeNull();
-    expect(preview.getAttribute("marker-end")).toBe("url(#preview-arrow)");
-    expect(preview.getAttribute("d")).toBe(path.getAttribute("d"));
+    dispatchPointer "pointermove", 90
+    preview := root.querySelector<SVGPathElement>(".edge-preview--directed")!
+    expect(preview).not.toBeNull()
+    expect(preview.getAttribute("marker-end")).toBe "url(#preview-arrow)"
+    expect(preview.getAttribute("d")).toBe path.getAttribute("d")
 
-    dispatchPointer("pointerdown", 80);
-    dispatchPointer("pointermove", 50);
-    dispatchPointer("pointerup", 20);
-    path.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 20, clientY: 0 }));
-    expect(path.getAttribute("aria-label")).toContain("toward a");
+    dispatchPointer "pointerdown", 80
+    dispatchPointer "pointermove", 50
+    dispatchPointer "pointerup", 20
+    path.dispatchEvent new MouseEvent "click", { bubbles: true, clientX: 20, clientY: 0 }
+    expect(path.getAttribute("aria-label")).toContain "toward a"
 
-    dispatchPointer("pointerdown", 90, "touch");
-    dispatchPointer("pointerup", 90, "touch");
+    dispatchPointer "pointerdown", 90, "touch"
+    dispatchPointer "pointerup", 90, "touch"
     expect(path.getAttribute("aria-label")).toContain("toward b");
   });
 
   it("orients an edge by dragging between nearby endpoints with mouse or touch", => {
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
-    svg := root.querySelector<SVGSVGElement>(".graph-canvas")!;
+    svg := root.querySelector<SVGSVGElement>(".graph-canvas")!
     Object.defineProperty(svg, "getScreenCTM", {
       configurable: true,
       value: => ({ inverse: => ({}) })
-    });
+    })
     Object.defineProperty(svg, "createSVGPoint", {
       configurable: true,
       value: => {
-        point := {
+        point :=
           x: 0,
           y: 0,
           matrixTransform: => ({ point.{x,y} })
-        };
-        return point;
+        return point
       }
-    });
-    a := root.querySelector<SVGGElement>('[data-vertex-id="a"]')!;
-    b := root.querySelector<SVGGElement>('[data-vertex-id="b"]')!;
-    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    Object.defineProperty(edge, "getTotalLength", { configurable: true, value: => 224 });
+    })
+    a := root.querySelector<SVGGElement>('[data-vertex-id="a"]')!
+    b := root.querySelector<SVGGElement>('[data-vertex-id="b"]')!
+    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!
+    Object.defineProperty edge, "getTotalLength", { configurable: true, value: => 224 }
     Object.defineProperty(edge, "getPointAtLength", {
       configurable: true,
       value: (length: number) => ({ x: 288 + length, y: 135 })
-    });
+    })
 
     dispatchPointer := (
       element: SVGElement,
@@ -190,366 +188,366 @@ describe("example selection", => {
         button: 0,
         clientX: x,
         clientY: y
-      });
+      })
       Object.defineProperties(event, {
         pointerId: { value: 9 },
         isPrimary: { value: true },
         pointerType: { value: pointerType }
-      });
+      })
       element.dispatchEvent(event);
-    };
+    }
 
-    touchStart := new Event("touchstart", { bubbles: true, cancelable: true });
-    a.dispatchEvent(touchStart);
-    expect(touchStart.defaultPrevented).toBe(true);
+    touchStart := new Event("touchstart", { bubbles: true, cancelable: true })
+    a.dispatchEvent touchStart
+    expect(touchStart.defaultPrevented).toBe true
 
-    dispatchPointer(a, "pointerdown", 255, 135);
-    dispatchPointer(a, "pointermove", 545, 135);
-    expect(root.querySelector(".edge-preview--directed")).not.toBeNull();
-    dispatchPointer(a, "pointerup", 545, 135);
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
-    a.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(root.querySelector(".counter")?.textContent).toContain("1 / 4 edges");
+    dispatchPointer a, "pointerdown", 255, 135
+    dispatchPointer a, "pointermove", 545, 135
+    expect(root.querySelector(".edge-preview--directed")).not.toBeNull()
+    dispatchPointer a, "pointerup", 545, 135
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
+    a.dispatchEvent new MouseEvent "click", { bubbles: true }
+    expect(root.querySelector(".counter")?.textContent).toContain "1 / 4 edges"
 
-    dispatchPointer(b, "pointerdown", 545, 135);
-    dispatchPointer(b, "pointerup", 520, 135);
-    expect(root.querySelector(".counter")?.textContent).toContain("2 / 4 edges");
+    dispatchPointer b, "pointerdown", 545, 135
+    dispatchPointer b, "pointerup", 520, 135
+    expect(root.querySelector(".counter")?.textContent).toContain "2 / 4 edges"
 
-    dispatchPointer(b, "pointerdown", 545, 135, "touch");
-    dispatchPointer(b, "pointerup", 255, 135, "touch");
-    expect(edge.getAttribute("aria-label")).toContain("toward a");
+    dispatchPointer b, "pointerdown", 545, 135, "touch"
+    dispatchPointer b, "pointerup", 255, 135, "touch"
+    expect(edge.getAttribute("aria-label")).toContain "toward a"
 
-    dispatchPointer(a, "pointerdown", 255, 135);
-    dispatchPointer(edge, "pointerup", 450, 135);
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
+    dispatchPointer a, "pointerdown", 255, 135
+    dispatchPointer edge, "pointerup", 450, 135
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
 
-    dispatchPointer(edge, "pointerdown", 450, 135);
-    dispatchPointer(a, "pointerup", 255, 135);
-    expect(edge.getAttribute("aria-label")).toContain("toward a");
+    dispatchPointer edge, "pointerdown", 450, 135
+    dispatchPointer a, "pointerup", 255, 135
+    expect(edge.getAttribute("aria-label")).toContain "toward a"
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    select.value = "synchronizer";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-    dangling := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    select.value = "synchronizer"
+    select.dispatchEvent new Event "change", { bubbles: true }
+    dangling := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!
 
-    dispatchPointer(svg, "pointerdown", 440, 280, "touch");
-    canvasTouch := new Event("touchstart", { bubbles: true, cancelable: true });
+    dispatchPointer svg, "pointerdown", 440, 280, "touch"
+    canvasTouch := new Event("touchstart", { bubbles: true, cancelable: true })
     Object.defineProperty(canvasTouch, "touches", {
       value: [{ clientX: 440, clientY: 280 }]
-    });
-    svg.dispatchEvent(canvasTouch);
-    expect(canvasTouch.defaultPrevented).toBe(true);
-    dispatchPointer(svg, "pointermove", 400, 75, "touch");
-    expect(root.querySelector(".edge-preview--directed")).not.toBeNull();
-    dispatchPointer(svg, "pointerup", 400, 75, "touch");
-    expect(dangling.getAttribute("aria-label")).toContain("toward the dangling end");
+    })
+    svg.dispatchEvent canvasTouch
+    expect(canvasTouch.defaultPrevented).toBe true
+    dispatchPointer svg, "pointermove", 400, 75, "touch"
+    expect(root.querySelector(".edge-preview--directed")).not.toBeNull()
+    dispatchPointer svg, "pointerup", 400, 75, "touch"
+    expect(dangling.getAttribute("aria-label")).toContain "toward the dangling end"
 
-    dispatchPointer(svg, "pointerdown", 405, 75);
-    dispatchPointer(svg, "pointerup", 440, 280);
+    dispatchPointer svg, "pointerdown", 405, 75
+    dispatchPointer svg, "pointerup", 440, 280
     expect(dangling.getAttribute("aria-label")).toContain("toward sync");
   });
 
   it("uses the favicon artwork as the masthead brand mark", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    mark := root.querySelector<HTMLImageElement>("img.brand-mark");
-    expect(mark?.getAttribute("src")).toBe("./favicon.svg");
-    expect(mark?.getAttribute("alt")).toBe("");
-    expect(root.querySelector("h1")?.getAttribute("aria-label")).toBe("Graph Orientation Playground");
-    expect(root.querySelector(".title-small-caps")?.textContent).toBe("GRAPH ORIENTATION PLAYGROUND");
-    expect(root.textContent).not.toContain("Interactive constraint lab");
-    paper := root.querySelector<HTMLAnchorElement>(".paper-link")!;
-    expect(paper.href).toBe("https://arxiv.org/abs/2603.03488");
-    expect(paper.textContent).toContain("Paper");
-    expect(paper.textContent).not.toContain("Read the paper");
-    github := root.querySelector<HTMLAnchorElement>(".github-link")!;
-    expect(github.href).toBe("https://github.com/edemaine/graph-orientation-visualizer");
-    expect(github.textContent).toContain("GitHub");
+    mark := root.querySelector<HTMLImageElement>("img.brand-mark")
+    expect(mark?.getAttribute("src")).toBe "./favicon.svg"
+    expect(mark?.getAttribute("alt")).toBe ""
+    expect(root.querySelector("h1")?.getAttribute("aria-label")).toBe "Graph Orientation Playground"
+    expect(root.querySelector(".title-small-caps")?.textContent).toBe "GRAPH ORIENTATION PLAYGROUND"
+    expect(root.textContent).not.toContain "Interactive constraint lab"
+    paper := root.querySelector<HTMLAnchorElement>(".paper-link")!
+    expect(paper.href).toBe "https://arxiv.org/abs/2603.03488"
+    expect(paper.textContent).toContain "Paper"
+    expect(paper.textContent).not.toContain "Read the paper"
+    github := root.querySelector<HTMLAnchorElement>(".github-link")!
+    expect(github.href).toBe "https://github.com/edemaine/graph-orientation-visualizer"
+    expect(github.textContent).toContain "GitHub"
     expect(github.querySelector(".github-icon")).not.toBeNull();
   });
 
   it("toggles and remembers the color theme", => {
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
-    toggle := root.querySelector<HTMLButtonElement>(".theme-toggle")!;
-    initial := document.documentElement.dataset.theme;
-    expect(toggle.getAttribute("aria-pressed")).toBe(initial is "dark" ? "true" : "false");
+    toggle := root.querySelector<HTMLButtonElement>(".theme-toggle")!
+    initial := document.documentElement.dataset.theme
+    expect(toggle.getAttribute("aria-pressed")).toBe(initial is "dark" ? "true" : "false")
 
-    toggle.click();
+    toggle.click()
 
-    changed := initial is "dark" ? "light" : "dark";
-    expect(document.documentElement.dataset.theme).toBe(changed);
-    expect(window.localStorage.getItem("graph-orientation-theme")).toBe(changed);
-    expect(toggle.getAttribute("aria-pressed")).toBe(changed is "dark" ? "true" : "false");
-    expect(toggle.querySelector(".theme-toggle__icon")?.textContent).toBe(changed is "dark" ? "☾" : "☀");
+    changed := initial is "dark" ? "light" : "dark"
+    expect(document.documentElement.dataset.theme).toBe changed
+    expect(window.localStorage.getItem("graph-orientation-theme")).toBe changed
+    expect(toggle.getAttribute("aria-pressed")).toBe(changed is "dark" ? "true" : "false")
+    expect(toggle.querySelector(".theme-toggle__icon")?.textContent).toBe(changed is "dark" ? "☾" : "☀")
     expect(toggle.querySelector(".theme-toggle__label")).toBeNull();
   });
 
   it("replaces the selected example and SVG diagram without repeating its title", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    expect(select.selectedOptions[0].textContent).toBe("Directed cycle");
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    expect(select.selectedOptions[0].textContent).toBe "Directed cycle"
     expect([...select.querySelectorAll("optgroup")].map(({ label }) => label)).toEqual([
       "Full graphs",
       "Paper gadgets"
-    ]);
-    expect(root.querySelector(".control-panel h2")).toBeNull();
-    expect(root.querySelectorAll(".edge-hit")).toHaveLength(4);
+    ])
+    expect(root.querySelector(".control-panel h2")).toBeNull()
+    expect(root.querySelectorAll(".edge-hit")).toHaveLength 4
 
-    select.value = "one-in-four";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    select.value = "one-in-four"
+    select.dispatchEvent new Event "change", { bubbles: true }
 
-    expect(select.selectedOptions[0].textContent).toBe("1-in-4 simulation");
+    expect(select.selectedOptions[0].textContent).toBe "1-in-4 simulation"
     expect(root.querySelectorAll(".edge-hit")).toHaveLength(5);
   });
 
   it("renders Figure 4 edges along their orthogonal routes", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    select.value = "figure-4-one-in-three-go";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    select.value = "figure-4-one-in-three-go"
+    select.dispatchEvent new Event "change", { bubbles: true }
 
-    description := root.querySelector(".description")!;
+    description := root.querySelector(".description")!
     expect([...description.querySelectorAll("i")].map(({ textContent }) => textContent)).toEqual([
       "x", "y", "z̄", "x", "z", "w"
-    ]);
-    expect(description.textContent).toContain("(x ∨ y ∨ z̄) ∧ (x ∨ z ∨ w)");
-    source := description.querySelector<HTMLAnchorElement>(".description-source")!;
-    expect(source.textContent).toContain("View paper");
-    expect(source.href).toBe("https://dspace.jaist.ac.jp/dspace/bitstream/10119/15100/4/23092.pdf");
-    expect(source.target).toBe("_blank");
-    vertexTypeRows := root.querySelectorAll(".vertex-type-list .vertex-type");
-    expect(vertexTypeRows).toHaveLength(3);
-    expect(root.querySelectorAll(".vertex-type-symbol > span")).toHaveLength(3);
-    expect(root.querySelector(".vertex-types table")).toBeNull();
-    expect(root.querySelector(".vertex-types")?.textContent).toContain("All edges point inward or all point outward");
-    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain("=");
-    expect(root.querySelectorAll(".vertex-label--single-character")).toHaveLength(12);
-    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain("1∕3");
-    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain("2∕3");
-    expect(root.querySelectorAll(".vertex-annotation")).toHaveLength(16);
+    ])
+    expect(description.textContent).toContain "(x ∨ y ∨ z̄) ∧ (x ∨ z ∨ w)"
+    source := description.querySelector<HTMLAnchorElement>(".description-source")!
+    expect(source.textContent).toContain "View paper"
+    expect(source.href).toBe "https://dspace.jaist.ac.jp/dspace/bitstream/10119/15100/4/23092.pdf"
+    expect(source.target).toBe "_blank"
+    vertexTypeRows := root.querySelectorAll(".vertex-type-list .vertex-type")
+    expect(vertexTypeRows).toHaveLength 3
+    expect(root.querySelectorAll(".vertex-type-symbol > span")).toHaveLength 3
+    expect(root.querySelector(".vertex-types table")).toBeNull()
+    expect(root.querySelector(".vertex-types")?.textContent).toContain "All edges point inward or all point outward"
+    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain "="
+    expect(root.querySelectorAll(".vertex-label--single-character")).toHaveLength 12
+    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain "1∕3"
+    expect([...root.querySelectorAll(".vertex-label")].map(({ textContent }) => textContent)).toContain "2∕3"
+    expect(root.querySelectorAll(".vertex-annotation")).toHaveLength 16
     clauseLabel := [...root.querySelectorAll<SVGTextElement>(".vertex-annotation")]
-      .find(({ textContent }) => textContent is "C₁")!;
+      .find(({ textContent }) => textContent is "C₁")!
     expect([...clauseLabel.querySelectorAll("tspan")].map((span) => [
       span.textContent,
       span.getAttribute "font-style"
-    ])).toEqual([["C", "italic"], ["₁", "normal"]]);
-    expect(clauseLabel.closest(".vertex")?.getAttribute("aria-label")).toMatch(/^C₁,/);
-    expect(root.querySelector('.vertex[aria-label*="<i>"]')).toBeNull();
-    expect(root.querySelectorAll(".vertex-body")).toHaveLength(16);
-    expect(root.querySelector(".vertex-shape rect")).toBeNull();
+    ])).toEqual [["C", "italic"], ["₁", "normal"]]
+    expect(clauseLabel.closest(".vertex")?.getAttribute("aria-label")).toMatch(/^C₁,/)
+    expect(root.querySelector('.vertex[aria-label*="<i>"]')).toBeNull()
+    expect(root.querySelectorAll(".vertex-body")).toHaveLength 16
+    expect(root.querySelector(".vertex-shape rect")).toBeNull()
 
     outerCycleEdge := root.querySelector<SVGPathElement>(
       '.edge-hit[aria-label^="x-between-2:"]'
-    );
+    )
     expect(outerCycleEdge?.getAttribute("d")).toBe(
       "M 903 60 L 1430 60 L 1430 140 L 70 140 L 70 60 L 117 60"
-    );
+    )
 
     literalPairEdge := root.querySelector<SVGPathElement>(
       '.edge-hit[aria-label^="x-pair-1:"]'
-    );
+    )
     expect(literalPairEdge?.getAttribute("d")).toBe("M 183 60 L 197 60");
   });
 
   it("places vertex feedback after the vertex type table", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    types := root.querySelector(".vertex-types")!;
-    feedback := root.querySelector(".legend")!;
-    expect(types.parentElement?.classList.contains("vertex-info")).toBe(true);
-    expect(feedback.parentElement).toBe(types.parentElement);
-    expect(feedback.querySelector("h3")).toBeNull();
-    expect(feedback.querySelectorAll(".legend-grid > span")).toHaveLength(4);
-    expect(types.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    types := root.querySelector(".vertex-types")!
+    feedback := root.querySelector(".legend")!
+    expect(types.parentElement?.classList.contains("vertex-info")).toBe true
+    expect(feedback.parentElement).toBe types.parentElement
+    expect(feedback.querySelector("h3")).toBeNull()
+    expect(feedback.querySelectorAll(".legend-grid > span")).toHaveLength 4
+    expect(types.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe 0
 
-    status := root.querySelector(".state-card")!;
-    howTo := root.querySelector(".how-to")!;
-    expect(feedback.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    status := root.querySelector(".state-card")!
+    howTo := root.querySelector(".how-to")!
+    expect(feedback.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe 0
     expect(status.compareDocumentPosition(howTo) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
   it("applies one round of forced vertices as a single history action", => {
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
     edge := (id: string) => {
-      return root.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${id}"]`)!;
-    };
-    edge("ab").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      return root.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${id}"]`)!
+    }
+    edge("ab").dispatchEvent new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
 
-    apply := root.querySelector<HTMLButtonElement>(".state-card__apply")!;
-    expect(apply.textContent).toContain("Apply all forced edges");
-    expect(root.querySelector(".state-card")?.textContent).toContain("2 forced vertices");
+    apply := root.querySelector<HTMLButtonElement>(".state-card__apply")!
+    expect(apply.textContent).toContain "Apply all forced edges"
+    expect(root.querySelector(".state-card")?.textContent).toContain "2 forced vertices"
 
-    apply.click();
+    apply.click()
 
-    expect(edge("bc").getAttribute("aria-label")).toContain("toward c");
-    expect(edge("da").getAttribute("aria-label")).toContain("toward a");
-    expect(edge("cd").getAttribute("aria-label")).toContain("unoriented");
-    expect(root.querySelector(".state-card")?.textContent).toContain("2 forced vertices");
+    expect(edge("bc").getAttribute("aria-label")).toContain "toward c"
+    expect(edge("da").getAttribute("aria-label")).toContain "toward a"
+    expect(edge("cd").getAttribute("aria-label")).toContain "unoriented"
+    expect(root.querySelector(".state-card")?.textContent).toContain "2 forced vertices"
 
-    root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!.click();
-    expect(edge("bc").getAttribute("aria-label")).toContain("unoriented");
+    root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!.click()
+    expect(edge("bc").getAttribute("aria-label")).toContain "unoriented"
     expect(edge("da").getAttribute("aria-label")).toContain("unoriented");
   });
 
   it("groups edge visuals before their interaction target for the focus glow", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    edge := root.querySelector(".edge-group")!;
-    visual := edge.querySelector(".edge-visual")!;
-    hit := edge.querySelector(".edge-hit")!;
+    edge := root.querySelector(".edge-group")!
+    visual := edge.querySelector(".edge-visual")!
+    hit := edge.querySelector(".edge-hit")!
 
-    expect(visual.querySelector(".edge-base")).not.toBeNull();
-    expect(visual.compareDocumentPosition(hit) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(visual.querySelector(".edge-base")).not.toBeNull()
+    expect(visual.compareDocumentPosition(hit) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe 0
     expect(edge.querySelector(".edge-selection")).toBeNull();
   });
 
   it("keeps edge progress in the footer below the graph", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    frame := root.querySelector(".graph-frame")!;
-    footer := root.querySelector(".canvas-footer")!;
+    frame := root.querySelector(".graph-frame")!
+    footer := root.querySelector(".canvas-footer")!
 
-    expect(frame.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(footer.querySelector(".counter")?.textContent).toContain("0 / 4 edges");
-    expect(footer.querySelector(".canvas-history")?.contains(footer.querySelector(".counter"))).toBe(true);
-    expect(footer.querySelectorAll(".history-button")).toHaveLength(2);
-    expect(footer.querySelector(".keyboard-note")).not.toBeNull();
-    expect(footer.querySelector(".download-button")?.textContent).toContain("Download SVG");
+    expect(frame.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe 0
+    expect(footer.querySelector(".counter")?.textContent).toContain "0 / 4 edges"
+    expect(footer.querySelector(".canvas-history")?.contains(footer.querySelector(".counter"))).toBe true
+    expect(footer.querySelectorAll(".history-button")).toHaveLength 2
+    expect(footer.querySelector(".keyboard-note")).not.toBeNull()
+    expect(footer.querySelector(".download-button")?.textContent).toContain "Download SVG"
     expect(root.querySelector(".canvas-toolbar")).toBeNull();
   });
 
   it("undoes and redoes orientation history with buttons and keyboard shortcuts", => {
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
-    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!;
-    undo := root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!;
-    redo := root.querySelector<HTMLButtonElement>('[aria-label="Redo orientation change"]')!;
-    expect(undo.disabled).toBe(true);
-    expect(redo.disabled).toBe(true);
+    edge := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="ab:"]')!
+    undo := root.querySelector<HTMLButtonElement>('[aria-label="Undo orientation change"]')!
+    redo := root.querySelector<HTMLButtonElement>('[aria-label="Redo orientation change"]')!
+    expect(undo.disabled).toBe true
+    expect(redo.disabled).toBe true
 
-    edge.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
-    expect(undo.disabled).toBe(false);
+    edge.dispatchEvent new KeyboardEvent "keydown", { key: "Enter", bubbles: true }
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
+    expect(undo.disabled).toBe false
 
-    undo.click();
-    expect(edge.getAttribute("aria-label")).toContain("unoriented");
-    expect(redo.disabled).toBe(false);
+    undo.click()
+    expect(edge.getAttribute("aria-label")).toContain "unoriented"
+    expect(redo.disabled).toBe false
 
-    redo.click();
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
+    redo.click()
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
 
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true }));
-    expect(edge.getAttribute("aria-label")).toContain("unoriented");
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "y", ctrlKey: true }));
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true }));
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, shiftKey: true }));
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true }));
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true, shiftKey: true }));
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "z", ctrlKey: true }
+    expect(edge.getAttribute("aria-label")).toContain "unoriented"
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "y", ctrlKey: true }
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "z", ctrlKey: true }
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "z", ctrlKey: true, shiftKey: true }
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "z", metaKey: true }
+    window.dispatchEvent new KeyboardEvent "keydown", { key: "z", metaKey: true, shiftKey: true }
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
 
-    root.querySelector<HTMLButtonElement>(".reset-button")!.click();
-    expect(edge.getAttribute("aria-label")).toContain("unoriented");
-    undo.click();
-    expect(edge.getAttribute("aria-label")).toContain("toward b");
+    root.querySelector<HTMLButtonElement>(".reset-button")!.click()
+    expect(edge.getAttribute("aria-label")).toContain "unoriented"
+    undo.click()
+    expect(edge.getAttribute("aria-label")).toContain "toward b"
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    select.value = "k4-puzzle";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(undo.disabled).toBe(true);
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    select.value = "k4-puzzle"
+    select.dispatchEvent new Event "change", { bubbles: true }
+    expect(undo.disabled).toBe true
     expect(redo.disabled).toBe(true);
   });
 
   it("serializes a standalone SVG with only graph styles", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
-    canvas := root.querySelector<SVGSVGElement>(".graph-canvas")!;
-    canvas.style.setProperty("--primary", "1 2 3");
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
+    canvas := root.querySelector<SVGSVGElement>(".graph-canvas")!
+    canvas.style.setProperty "--primary", "1 2 3"
 
-    serialized := serializeGraphSvg(canvas, "dark");
+    serialized := serializeGraphSvg(canvas, "dark")
 
-    expect(serialized.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')).toBe(true);
-    parsed := new DOMParser().parseFromString(serialized, "image/svg+xml");
-    expect(parsed.querySelector("parsererror")).toBeNull();
-    svg := parsed.documentElement;
-    expect(svg.namespaceURI).toBe("http://www.w3.org/2000/svg");
-    expect(svg.getAttribute("data-theme")).toBe("dark");
-    expect(svg.getAttribute("width")).toBe("800");
-    expect(svg.getAttribute("height")).toBe("560");
-    expect(svg.querySelector("style[data-svg-export]")?.textContent).toContain(".edge-base");
-    expect(svg.querySelector("style[data-svg-export]")?.textContent).not.toContain(".masthead");
-    expect(svg.querySelector("style[data-svg-export]")?.textContent).not.toContain(".download-button");
-    expect((svg as SVGSVGElement).style.getPropertyValue("--primary")).toBe("1 2 3");
+    expect(serialized.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')).toBe true
+    parsed := new DOMParser().parseFromString(serialized, "image/svg+xml")
+    expect(parsed.querySelector("parsererror")).toBeNull()
+    svg := parsed.documentElement
+    expect(svg.namespaceURI).toBe "http://www.w3.org/2000/svg"
+    expect(svg.getAttribute("data-theme")).toBe "dark"
+    expect(svg.getAttribute("width")).toBe "800"
+    expect(svg.getAttribute("height")).toBe "560"
+    expect(svg.querySelector("style[data-svg-export]")?.textContent).toContain ".edge-base"
+    expect(svg.querySelector("style[data-svg-export]")?.textContent).not.toContain ".masthead"
+    expect(svg.querySelector("style[data-svg-export]")?.textContent).not.toContain ".download-button"
+    expect((svg as SVGSVGElement).style.getPropertyValue("--primary")).toBe "1 2 3"
     expect(svg.querySelectorAll(".edge-hit")).toHaveLength(4);
   });
 
   it("downloads the current example with an SVG filename and MIME type", => {
-    createObjectURL := vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:graph-svg");
-    let filename: string?;
+    createObjectURL := vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:graph-svg")
+    let filename: string?
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (@: HTMLAnchorElement) {
       filename = @download;
-    });
-    root := document.createElement("div");
-    document.body.append(root);
-    dispose = render(=> <Visualizer />, root);
+    })
+    root := document.createElement("div")
+    document.body.append root
+    dispose = render(=> <Visualizer />, root)
 
-    root.querySelector<HTMLButtonElement>(".download-button")!.click();
+    root.querySelector<HTMLButtonElement>(".download-button")!.click()
 
-    expect(createObjectURL).toHaveBeenCalledOnce();
-    expect(createObjectURL.mock.calls[0][0]).toBeInstanceOf(Blob);
-    expect((createObjectURL.mock.calls[0][0] as Blob).type).toBe("image/svg+xml;charset=utf-8");
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(createObjectURL.mock.calls[0][0]).toBeInstanceOf Blob
+    expect((createObjectURL.mock.calls[0][0] as Blob).type).toBe "image/svg+xml;charset=utf-8"
     expect(filename).toBe("cycle-tutorial.svg");
   });
 
   it("marks the two pairs of synchronizer ports", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    select.value = "synchronizer";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    select.value = "synchronizer"
+    select.dispatchEvent new Event "change", { bubbles: true }
 
-    vertex := root.querySelector(".vertex")!;
-    north := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!;
-    expect(vertex.querySelector(".vertex-label--single-character")?.textContent).toBe("S");
-    expect(vertex.querySelectorAll(".port-pair-label--0")).toHaveLength(2);
-    expect(vertex.querySelectorAll(".port-pair-label--1")).toHaveLength(2);
-    expect([...vertex.querySelectorAll(".port-pair-label")].map(({ textContent }) => textContent)).toEqual(["+", "+", "−", "−"]);
+    vertex := root.querySelector(".vertex")!
+    north := root.querySelector<SVGPathElement>('.edge-hit[aria-label^="north:"]')!
+    expect(vertex.querySelector(".vertex-label--single-character")?.textContent).toBe "S"
+    expect(vertex.querySelectorAll(".port-pair-label--0")).toHaveLength 2
+    expect(vertex.querySelectorAll(".port-pair-label--1")).toHaveLength 2
+    expect([...vertex.querySelectorAll(".port-pair-label")].map(({ textContent }) => textContent)).toEqual ["+", "+", "−", "−"]
 
-    body := vertex.querySelector(".vertex-body")!;
-    firstPortLabel := vertex.querySelector(".port-pair-label")!;
-    expect(vertex.querySelector(".vertex-shape")?.contains(body)).toBe(true);
-    expect(body.compareDocumentPosition(firstPortLabel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(root.querySelector(".vertex-types")?.textContent).toContain("The + ports agree");
-    expect(root.querySelector(".external-port")).toBeNull();
+    body := vertex.querySelector(".vertex-body")!
+    firstPortLabel := vertex.querySelector(".port-pair-label")!
+    expect(vertex.querySelector(".vertex-shape")?.contains(body)).toBe true
+    expect(body.compareDocumentPosition(firstPortLabel) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe 0
+    expect(root.querySelector(".vertex-types")?.textContent).toContain "The + ports agree"
+    expect(root.querySelector(".external-port")).toBeNull()
     expect(north.getAttribute("d")).toBe("M 400 247 L 400 70");
   });
 
   it("enlarges the alternator's one-character label", => {
-    root := document.createElement("div");
-    dispose = render(=> <Visualizer />, root);
+    root := document.createElement("div")
+    dispose = render(=> <Visualizer />, root)
 
-    select := root.querySelector<HTMLSelectElement>("#example")!;
-    select.value = "alternator";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    select := root.querySelector<HTMLSelectElement>("#example")!
+    select.value = "alternator"
+    select.dispatchEvent new Event "change", { bubbles: true }
 
     expect(root.querySelector(".vertex-label--single-character")?.textContent).toBe("A");
   });
-});
+}

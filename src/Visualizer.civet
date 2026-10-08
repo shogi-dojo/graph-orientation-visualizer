@@ -1,6 +1,6 @@
-{ For, Show, batch, createEffect, createMemo, createSignal, onCleanup } from solid-js;
-{ EXAMPLES } from ./examples.civet;
-graphStyles from "./graph.sass?inline";
+{ For, Show, batch, createEffect, createMemo, createSignal, onCleanup } from solid-js
+{ EXAMPLES } from ./examples.civet
+graphStyles from "./graph.sass?inline"
 {
   type Constraint,
   type Edge,
@@ -11,33 +11,33 @@ graphStyles from "./graph.sass?inline";
   analyzeVertex,
   emptyDirections,
   incidencesAt
-} from ./model.civet;
+} from ./model.civet
 
-NODE_RADIUS := 29;
-NODE_EDGE_PADDING := NODE_RADIUS + 4;
+NODE_RADIUS := 29
+NODE_EDGE_PADDING := NODE_RADIUS + 4
 
 export interface Point { x: number; y: number }
-type Theme = "light" | "dark";
-type DirectionState = Record<string, EdgeDirection>;
-type DirectionUpdate = DirectionState | ((current: DirectionState) => DirectionState);
+type Theme = "light" | "dark"
+type DirectionState = Record<string, EdgeDirection>
+type DirectionUpdate = DirectionState | ((current: DirectionState) => DirectionState)
 interface LabelPart { text: string; italic: boolean }
 interface DragCandidate {
-  edge: Edge;
-  fraction: number;
-  distance: number;
-  source: "edge" | "endpoint";
+  edge: Edge
+  fraction: number
+  distance: number
+  source: "edge" | "endpoint"
 }
 
-EDGE_SWIPE_MINIMUM_PIXELS := 12;
-EDGE_SWIPE_MINIMUM_FRACTION := 0.004;
-EDGE_HIT_RADIUS := 20;
-ENDPOINT_DRAG_MINIMUM_PIXELS := 12;
-ENDPOINT_DRAG_RADIUS := NODE_RADIUS + 18;
+EDGE_SWIPE_MINIMUM_PIXELS := 12
+EDGE_SWIPE_MINIMUM_FRACTION := 0.004
+EDGE_HIT_RADIUS := 20
+ENDPOINT_DRAG_MINIMUM_PIXELS := 12
+ENDPOINT_DRAG_RADIUS := NODE_RADIUS + 18
 
-THEME_STORAGE_KEY := "graph-orientation-theme";
-SVG_NAMESPACE := "http://www.w3.org/2000/svg";
-XMLNS_NAMESPACE := "http://www.w3.org/2000/xmlns/";
-SVG_XML_PREAMBLE := '<?xml version="1.0" encoding="UTF-8"?>';
+THEME_STORAGE_KEY := "graph-orientation-theme"
+SVG_NAMESPACE := "http://www.w3.org/2000/svg"
+XMLNS_NAMESPACE := "http://www.w3.org/2000/xmlns/"
+SVG_XML_PREAMBLE := '<?xml version="1.0" encoding="UTF-8"?>'
 GRAPH_STYLE_PROPERTIES := [
   "--font-family",
   "--graph-neutral",
@@ -54,207 +54,203 @@ GRAPH_STYLE_PROPERTIES := [
   "--impossible-surface",
   "--green",
   "--on-accent"
-] as const;
+] as const
 
 export parseLabelMarkup := (label: string): LabelPart[] => {
-  const parts: LabelPart[] = [];
-  italic := /<i>(.*?)<\/i>/g;
-  cursor .= 0;
+  const parts: LabelPart[] = []
+  italic := /<i>(.*?)<\/i>/g
+  cursor .= 0
   for (const match of label.matchAll(italic)) {
-    if (match.index > cursor) parts.push({ text: label[cursor..<match.index], italic: false });
-    parts.push({ text: match[1], italic: true });
-    cursor = match.index + match[0]#;
+    if (match.index > cursor) parts.push({ text: label[cursor..<match.index], italic: false })
+    parts.push { text: match[1], italic: true }
+    cursor = match.index + match[0]#
   }
-  if (cursor < label#) parts.push({ text: label[>=cursor], italic: false });
-  return parts# ? parts : [{ text: label, italic: false }];
-};
+  if (cursor < label#) parts.push({ text: label[>=cursor], italic: false })
+  return parts# ? parts : [{ text: label, italic: false }]
+}
 
 plainLabel := (label: string) => {
-  return parseLabelMarkup(label).map(({ text }) => text).join("");
-};
+  return parseLabelMarkup(label).map(({ text }) => text).join("")
+}
 
 export platformUsesCommandKey := (platform: string) => {
-  return /mac|iphone|ipad|ipod/i.test(platform);
-};
+  return /mac|iphone|ipad|ipod/i.test(platform)
+}
 
 export contradictionSummary := (violated: number, incomplete: number) => {
-  const messages: string[] = [];
+  const messages: string[] = []
   if (violated > 0) {
-    messages.push(`${violated} ${violated is 1 ? "vertex is" : "vertices are"} violated.`);
+    messages.push `${violated} ${violated is 1 ? "vertex is" : "vertices are"} violated.`
   }
   if (incomplete > 0) {
-    messages.push(`${incomplete} ${incomplete is 1 ? "vertex has" : "vertices have"} no possible completion.`);
+    messages.push `${incomplete} ${incomplete is 1 ? "vertex has" : "vertices have"} no possible completion.`
   }
-  return messages.join(" ");
-};
+  return messages.join(" ")
+}
 
 detectedPlatform := => {
-  userAgentData := (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
-  return userAgentData?.platform or navigator.platform or navigator.userAgent;
-};
+  userAgentData := (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+  return userAgentData?.platform or navigator.platform or navigator.userAgent
+}
 
 export serializeGraphSvg := (source: SVGSVGElement, theme: Theme): string => {
-  svg := source.cloneNode(true) as SVGSVGElement;
-  if (not svg.hasAttribute("xmlns")) svg.setAttributeNS(XMLNS_NAMESPACE, "xmlns", SVG_NAMESPACE);
-  svg.setAttribute("data-theme", theme);
+  svg := source.cloneNode(true) as SVGSVGElement
+  if (not svg.hasAttribute("xmlns")) svg.setAttributeNS(XMLNS_NAMESPACE, "xmlns", SVG_NAMESPACE)
+  svg.setAttribute "data-theme", theme
 
-  viewBox := svg.getAttribute("viewBox")?.trim().split(/[ ,]+/).map(Number);
+  viewBox := svg.getAttribute("viewBox")?.trim().split(/[ ,]+/).map(Number)
   if (viewBox?# is 4 and viewBox.every(Number.isFinite)) {
-    if (not svg.hasAttribute("width")) svg.setAttribute("width", String(viewBox[2]));
-    if (not svg.hasAttribute("height")) svg.setAttribute("height", String(viewBox[3]));
+    if (not svg.hasAttribute("width")) svg.setAttribute("width", String(viewBox[2]))
+    if (not svg.hasAttribute("height")) svg.setAttribute("height", String(viewBox[3]))
   }
 
-  computedStyle := getComputedStyle(source);
+  computedStyle := getComputedStyle(source)
   for (const property of GRAPH_STYLE_PROPERTIES) {
-    value := computedStyle.getPropertyValue(property);
-    if (value) svg.style.setProperty(property, value);
+    value := computedStyle.getPropertyValue(property)
+    if (value) svg.style.setProperty(property, value)
   }
 
-  style := document.createElementNS(SVG_NAMESPACE, "style");
-  style.setAttribute("data-svg-export", "");
-  style.textContent = graphStyles;
-  svg.prepend(style);
+  style := document.createElementNS(SVG_NAMESPACE, "style")
+  style.setAttribute "data-svg-export", ""
+  style.textContent = graphStyles
+  svg.prepend style
 
-  return `${SVG_XML_PREAMBLE}\n${new XMLSerializer().serializeToString(svg)}\n`;
-};
+  return `${SVG_XML_PREAMBLE}\n${new XMLSerializer().serializeToString(svg)}\n`
+}
 
 initialTheme := : Theme => {
   try {
-    saved := window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved is "light" or saved is "dark") return saved;
+    saved := window.localStorage.getItem(THEME_STORAGE_KEY)
+    if (saved is "light" or saved is "dark") return saved
   } catch {
     // Storage can be unavailable in privacy-restricted contexts.
   }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-};
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
 
 endpointPoint := (graph: GraphDefinition, end: EdgeEnd): Point => {
   if ("vertex" in end) {
-    vertex := graph.vertices.find(({ id }) => id is end.vertex);
+    vertex := graph.vertices.find(({ id }) => id is end.vertex)
     throw new Error(`Missing vertex ${end.vertex}`) unless vertex
-    return { vertex.{x,y} };
+    return { vertex.{x,y} }
   }
-  return end;
-};
+  return end
+}
 
 unit := (point: Point): Point => {
-  length := Math.hypot(point.x, point.y) or 1;
-  return { x: point.x / length, y: point.y / length };
-};
+  length := Math.hypot(point.x, point.y) or 1
+  return { x: point.x / length, y: point.y / length }
+}
 
 edgeGeometry := (graph: GraphDefinition, edge: Edge) => {
-  rawStart := endpointPoint(graph, edge.ends[0]);
-  rawEnd := endpointPoint(graph, edge.ends[1]);
-  firstWaypoint := edge.route?.[0];
-  lastWaypoint := edge.route?.[edge.route# - 1];
+  rawStart := endpointPoint(graph, edge.ends[0])
+  rawEnd := endpointPoint(graph, edge.ends[1])
+  firstWaypoint := edge.route?.[0]
+  lastWaypoint := edge.route?.[edge.route# - 1]
   startDirection := edge.control
     ? unit({ x: edge.control.x - rawStart.x, y: edge.control.y - rawStart.y })
     : unit({
         x: (firstWaypoint ?? rawEnd).x - rawStart.x,
         y: (firstWaypoint ?? rawEnd).y - rawStart.y
-      });
+      })
   endDirection := edge.control
     ? unit({ x: rawEnd.x - edge.control.x, y: rawEnd.y - edge.control.y })
     : unit({
         x: rawEnd.x - (lastWaypoint ?? rawStart).x,
         y: rawEnd.y - (lastWaypoint ?? rawStart).y
-      });
-  startPadding := "vertex" in edge.ends[0] ? NODE_EDGE_PADDING : 0;
-  endPadding := "vertex" in edge.ends[1] ? NODE_EDGE_PADDING : 0;
-  start := {
+      })
+  startPadding := "vertex" in edge.ends[0] ? NODE_EDGE_PADDING : 0
+  endPadding := "vertex" in edge.ends[1] ? NODE_EDGE_PADDING : 0
+  start :=
     x: rawStart.x + startDirection.x * startPadding,
     y: rawStart.y + startDirection.y * startPadding
-  };
-  end := {
+  end :=
     x: rawEnd.x - endDirection.x * endPadding,
     y: rawEnd.y - endDirection.y * endPadding
-  };
   if (edge.control) {
-    middle := ` Q ${edge.control.x} ${edge.control.y}`;
-    forward := `M ${start.x} ${start.y}${middle} ${end.x} ${end.y}`;
-    reverse := `M ${end.x} ${end.y}${middle} ${start.x} ${start.y}`;
-    midpoint := {
+    middle := ` Q ${edge.control.x} ${edge.control.y}`
+    forward := `M ${start.x} ${start.y}${middle} ${end.x} ${end.y}`
+    reverse := `M ${end.x} ${end.y}${middle} ${start.x} ${start.y}`
+    midpoint :=
       x: 0.25 * start.x + 0.5 * edge.control.x + 0.25 * end.x,
       y: 0.25 * start.y + 0.5 * edge.control.y + 0.25 * end.y
-    };
-    return { start, end, midpoint, forward, reverse };
+    return { start, end, midpoint, forward, reverse }
   }
 
-  points := [start, ...(edge.route ?? []), end];
+  points := [start, ...(edge.route ?? []), end]
   path := (pathPoints: Point[]) => {
-    return `M ${pathPoints.map(({ x, y }) => `${x} ${y}`).join(" L ")}`;
-  };
+    return `M ${pathPoints.map(({ x, y }) => `${x} ${y}`).join(" L ")}`
+  }
   lengths := points.slice(1).map((point, index) => {
-    return Math.hypot(point.x - points[index].x, point.y - points[index].y);
-  });
-  halfway := lengths.reduce((sum, length) => sum + length, 0) / 2;
-  traversed .= 0;
-  midpoint .= { ...start };
+    return Math.hypot(point.x - points[index].x, point.y - points[index].y)
+  })
+  halfway := lengths.reduce((sum, length) => sum + length, 0) / 2
+  traversed .= 0
+  midpoint .= { ...start }
   for (let index = 0; index < lengths#; index += 1) {
-    length := lengths[index];
+    length := lengths[index]
     if traversed + length >= halfway
-      fraction := length is 0 ? 0 : (halfway - traversed) / length;
-      midpoint = {
+      fraction := length is 0 ? 0 : (halfway - traversed) / length
+      midpoint =
         x: points[index].x + fraction * (points[index + 1].x - points[index].x),
         y: points[index].y + fraction * (points[index + 1].y - points[index].y)
-      };
-      break;
-    traversed += length;
+      break
+    traversed += length
   }
-  forward := path(points);
-  reverse := path([...points].reverse());
-  return { start, end, midpoint, forward, reverse };
-};
+  forward := path(points)
+  reverse := path([...points].reverse())
+  return { start, end, midpoint, forward, reverse }
+}
 
 eventPoint := (
   event: MouseEvent | PointerEvent,
   element: SVGGraphicsElement | SVGSVGElement
 ): Point => {
-  svg := element instanceof SVGSVGElement ? element : element.ownerSVGElement;
-  matrix := svg?.getScreenCTM();
-  if (not svg or not matrix) return { x: 0, y: 0 };
-  point := svg.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
-  local := point.matrixTransform(matrix.inverse());
-  return { local.{x,y} };
-};
+  svg := element instanceof SVGSVGElement ? element : element.ownerSVGElement
+  matrix := svg?.getScreenCTM()
+  if (not svg or not matrix) return { x: 0, y: 0 }
+  point := svg.createSVGPoint()
+  point.x = event.clientX
+  point.y = event.clientY
+  local := point.matrixTransform(matrix.inverse())
+  return { local.{x,y} }
+}
 
 closestPathLocation := (path: SVGPathElement, point: Point) => {
-  length := path.getTotalLength();
-  bestFraction .= 0;
-  bestDistance .= Number.POSITIVE_INFINITY;
+  length := path.getTotalLength()
+  bestFraction .= 0
+  bestDistance .= Number.POSITIVE_INFINITY
   for (let step = 0; step <= 60; step += 1) {
-    fraction := step / 60;
-    sample := path.getPointAtLength(length * fraction);
-    distance := (sample.x - point.x) ** 2 + (sample.y - point.y) ** 2;
+    fraction := step / 60
+    sample := path.getPointAtLength(length * fraction)
+    distance := (sample.x - point.x) ** 2 + (sample.y - point.y) ** 2
     if distance < bestDistance
-      bestDistance = distance;
-      bestFraction = fraction;
+      bestDistance = distance
+      bestFraction = fraction
   }
-  radius .= 1 / 60;
+  radius .= 1 / 60
   for (let pass = 0; pass < 2; pass += 1) {
-    start := Math.max(0, bestFraction - radius);
-    end := Math.min(1, bestFraction + radius);
+    start := Math.max(0, bestFraction - radius)
+    end := Math.min(1, bestFraction + radius)
     for let step = 0; step <= 12; step += 1
-      fraction := start + (end - start) * step / 12;
-      sample := path.getPointAtLength(length * fraction);
-      distance := (sample.x - point.x) ** 2 + (sample.y - point.y) ** 2;
+      fraction := start + (end - start) * step / 12
+      sample := path.getPointAtLength(length * fraction)
+      distance := (sample.x - point.x) ** 2 + (sample.y - point.y) ** 2
       if distance < bestDistance
-        bestDistance = distance;
-        bestFraction = fraction;
-    radius /= 12;
+        bestDistance = distance
+        bestFraction = fraction
+    radius /= 12
   }
-  return { fraction: bestFraction, distance: Math.sqrt(bestDistance) };
-};
+  return { fraction: bestFraction, distance: Math.sqrt(bestDistance) }
+}
 
 closestFraction := (path: SVGPathElement, point: Point): number => {
-  return closestPathLocation(path, point).fraction;
-};
+  return closestPathLocation(path, point).fraction
+}
 
 edgeZone := (fraction: number): 0 | 1 | 2 => {
-  return fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : 2;
-};
+  return fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : 2
+}
 
 export edgeSwipeDirection := (
   startFraction: number,
@@ -262,151 +258,150 @@ export edgeSwipeDirection := (
   startPoint: Point,
   endPoint: Point
 ): 0 | 1 | null => {
-  distance := Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
-  progress := endFraction - startFraction;
-  if (distance < EDGE_SWIPE_MINIMUM_PIXELS or Math.abs(progress) < EDGE_SWIPE_MINIMUM_FRACTION) return null;
-  return progress > 0 ? 1 : 0;
-};
+  distance := Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y)
+  progress := endFraction - startFraction
+  if (distance < EDGE_SWIPE_MINIMUM_PIXELS or Math.abs(progress) < EDGE_SWIPE_MINIMUM_FRACTION) return null
+  return progress > 0 ? 1 : 0
+}
 
 directionLabel := (edge: Edge, direction: 0 | 1): string => {
-  end := edge.ends[direction];
-  return "vertex" in end ? `toward ${end.vertex}` : "toward the dangling end";
-};
+  end := edge.ends[direction]
+  return "vertex" in end ? `toward ${end.vertex}` : "toward the dangling end"
+}
 
 constraintRule := (constraint: Constraint): string => {
-  exact := /^(\d+)-in-(\d+)$/.exec(constraint.name);
-  if (exact) return `Exactly ${exact[1]} of ${exact[2]} edges point inward`;
+  exact := /^(\d+)-in-(\d+)$/.exec(constraint.name)
+  if (exact) return `Exactly ${exact[1]} of ${exact[2]} edges point inward`
   if (constraint.name is `{0,${constraint.degree}}-in-${constraint.degree}`) {
-    return "All edges point inward or all point outward";
+    return "All edges point inward or all point outward"
   }
   if (constraint.name is "synchronizer") {
-    return "The + ports agree, the − ports agree, and the two pairs are opposite";
+    return "The + ports agree, the − ports agree, and the two pairs are opposite"
   }
   if (constraint.name is "6-alternator") {
-    return "Neighboring ports alternate inward and outward";
+    return "Neighboring ports alternate inward and outward"
   }
-  return constraint.name;
-};
+  return constraint.name
+}
 
 export function Visualizer()
-  let graphCanvas: SVGSVGElement?;
+  let graphCanvas: SVGSVGElement?
   let activeDrag: {
-    pointerId: number;
-    startCandidates: DragCandidate[];
-    startPoint: Point;
-    startEdgeId?: string;
-    startVertexId?: string;
-  } | null = null;
-  let suppressedEdgeClick: { edgeId: string; expires: number } | null = null;
-  let suppressedVertexClick: { vertexId: string; expires: number } | null = null;
-  usesCommandKey := platformUsesCommandKey(detectedPlatform());
-  historyModifier := usesCommandKey ? "Command" : "Ctrl";
-  [theme, setTheme] := createSignal<Theme>(initialTheme());
-  [selectedId, setSelectedId] := createSignal(EXAMPLES[0].id);
-  selectedGraph := createMemo(=> EXAMPLES.find(({ id }) => id is selectedId()) ?? EXAMPLES[0]);
-  [directions, setDirections] := createSignal<DirectionState>(emptyDirections(selectedGraph()));
-  [undoStack, setUndoStack] := createSignal<DirectionState[]>([]);
-  [redoStack, setRedoStack] := createSignal<DirectionState[]>([]);
-  canUndo := createMemo(=> undoStack()# > 0);
-  canRedo := createMemo(=> redoStack()# > 0);
-  [hovered, setHovered] := createSignal<{ edge: string; zone: 0 | 1 | 2 } | null>(null);
+    pointerId: number
+    startCandidates: DragCandidate[]
+    startPoint: Point
+    startEdgeId?: string
+    startVertexId?: string
+  } | null = null
+  let suppressedEdgeClick: { edgeId: string; expires: number } | null = null
+  let suppressedVertexClick: { vertexId: string; expires: number } | null = null
+  usesCommandKey := platformUsesCommandKey(detectedPlatform())
+  historyModifier := usesCommandKey ? "Command" : "Ctrl"
+  [theme, setTheme] := createSignal<Theme>(initialTheme())
+  [selectedId, setSelectedId] := createSignal(EXAMPLES[0].id)
+  selectedGraph := createMemo => EXAMPLES.find(({ id }) => id is selectedId()) ?? EXAMPLES[0]
+  [directions, setDirections] := createSignal<DirectionState>(emptyDirections(selectedGraph()))
+  [undoStack, setUndoStack] := createSignal<DirectionState[]>([])
+  [redoStack, setRedoStack] := createSignal<DirectionState[]>([])
+  canUndo := createMemo => undoStack()# > 0
+  canRedo := createMemo => redoStack()# > 0
+  [hovered, setHovered] := createSignal<{ edge: string; zone: 0 | 1 | 2 } | null>(null)
 
   vertexTypes := createMemo(=> {
-    grouped := new Map<string, { constraint: Constraint; labels: Set<string> }>();
+    grouped := new Map<string, { constraint: Constraint; labels: Set<string> }>()
     for (const vertex of selectedGraph().vertices) {
-      key := `${vertex.constraint.name}:${vertex.constraint.allowed.join(",")}`;
-      group := grouped.get(key) ?? { vertex.constraint, labels: new Set<string>() };
-      if (vertex.label) group.labels.add(vertex.label);
-      grouped.set(key, group);
+      key := `${vertex.constraint.name}:${vertex.constraint.allowed.join(",")}`
+      group := grouped.get(key) ?? { vertex.constraint, labels: new Set<string>() }
+      if (vertex.label) group.labels.add(vertex.label)
+      grouped.set key, group
     }
     return [...grouped.values()].map(({ constraint, labels }) => {
-      visibleLabels := [...labels];
+      visibleLabels := [...labels]
       symbol := visibleLabels# is 0
         ? constraint.shortLabel
-        : `${visibleLabels.slice(0, 2).join(", ")}${visibleLabels.length > 2 ? ", …" : ""}`;
-      return { symbol, rule: constraintRule(constraint) };
+        : `${visibleLabels.slice(0, 2).join(", ")}${visibleLabels.length > 2 ? ", …" : ""}`
+      return { symbol, rule: constraintRule(constraint) }
     });
-  });
+  })
 
   analyses := createMemo(=> Object.fromEntries(
     selectedGraph().vertices.map((vertex) => [
       vertex.id,
       analyzeVertex selectedGraph(), directions(), vertex
     ])
-  ));
+  ))
 
   forcedEdges := createMemo(=> {
-    const result: Record<string, { direction: 0 | 1 | null; conflict: boolean }> = {};
+    const result: Record<string, { direction: 0 | 1 | null; conflict: boolean }> = {}
     for (const edge of selectedGraph().edges) {
-      implied := new Set<0 | 1>();
+      implied := new Set<0 | 1>()
       for analysis of Object.values(analyses())
-        direction := analysis.forced.get(edge.id);
+        direction := analysis.forced.get(edge.id)
         implied.add(direction) unless direction is undefined
-      result[edge.id] = {
+      result[edge.id] =
         direction: implied.size is 1 ? [...implied][0] : null,
         conflict: implied.size > 1
-      };
     }
-    return result;
-  });
+    return result
+  })
 
   progress := createMemo(=> {
-    values := Object.values(analyses());
-    oriented := Object.values(directions()).filter((direction) => direction !== null)#;
-    impossible := values.filter(({ state }) => state is "impossible")#;
+    values := Object.values(analyses())
+    oriented := Object.values(directions()).filter((direction) => direction !== null)#
+    impossible := values.filter(({ state }) => state is "impossible")#
     violated := values.filter(({ state, assignedPorts, totalPorts }) => {
-      return state is "impossible" and assignedPorts is totalPorts;
-    })#;
-    incompleteImpossible := impossible - violated;
-    satisfied := values.filter(({ state }) => state is "satisfied")#;
-    forced := values.filter(({ state }) => state is "forced")#;
-    edgeConflicts := Object.values(forcedEdges()).filter(({ conflict }) => conflict)#;
-    solved := oriented is selectedGraph().edges# and satisfied is selectedGraph().vertices#;
-    return { oriented, impossible, violated, incompleteImpossible, satisfied, forced, edgeConflicts, solved };
-  });
+      return state is "impossible" and assignedPorts is totalPorts
+    })#
+    incompleteImpossible := impossible - violated
+    satisfied := values.filter(({ state }) => state is "satisfied")#
+    forced := values.filter(({ state }) => state is "forced")#
+    edgeConflicts := Object.values(forcedEdges()).filter(({ conflict }) => conflict)#
+    solved := oriented is selectedGraph().edges# and satisfied is selectedGraph().vertices#
+    return { oriented, impossible, violated, incompleteImpossible, satisfied, forced, edgeConflicts, solved }
+  })
 
   directionsEqual := (first: DirectionState, second: DirectionState) => {
-    keys := Object.keys(first);
-    return keys# is Object.keys(second)# and keys.every((key) => first[key] is second[key]);
-  };
+    keys := Object.keys(first)
+    return keys# is Object.keys(second)# and keys.every((key) => first[key] is second[key])
+  }
 
   commitDirections := (update: DirectionUpdate) => {
-    current := directions();
-    next := update <? "function" ? update(current) : update;
-    if directionsEqual(current, next) then return;
+    current := directions()
+    next := update <? "function" ? update(current) : update
+    if directionsEqual(current, next) then return
     batch(=> {
       setUndoStack((stack) => [...stack, current]);
       setRedoStack([]);
       setDirections(next);
     });
-  };
+  }
 
   undo := => {
-    stack := undoStack();
-    previous := stack[stack# - 1];
+    stack := undoStack()
+    previous := stack[stack# - 1]
     return unless previous
-    current := directions();
+    current := directions()
     batch(=> {
       setUndoStack(stack[<-1]);
       setRedoStack((redo) => [...redo, current]);
       setDirections(previous);
     });
-  };
+  }
 
   redo := => {
-    stack := redoStack();
-    next := stack[stack# - 1];
+    stack := redoStack()
+    next := stack[stack# - 1]
     return unless next
-    current := directions();
+    current := directions()
     batch(=> {
       setRedoStack(stack[<-1]);
       setUndoStack((undoHistory) => [...undoHistory, current]);
       setDirections(next);
     });
-  };
+  }
 
   chooseExample := (id: string) => {
-    graph := EXAMPLES.find((example) => example.id is id) ?? EXAMPLES[0];
+    graph := EXAMPLES.find((example) => example.id is id) ?? EXAMPLES[0]
     batch(=> {
       setSelectedId(graph.id);
       setDirections(emptyDirections(graph));
@@ -414,109 +409,109 @@ export function Visualizer()
       setRedoStack([]);
       setHovered(null);
     });
-  };
+  }
 
   setEdge := (edgeId: string, direction: EdgeDirection) => {
     commitDirections((current) => ({ ...current, [edgeId]: direction }));
-  };
+  }
 
   interactWithEdge := (event: MouseEvent, edge: Edge) => {
-    path := event.currentTarget as SVGPathElement;
-    fraction := closestFraction(path, eventPoint(event, path));
+    path := event.currentTarget as SVGPathElement
+    fraction := closestFraction(path, eventPoint(event, path))
     setEdge(edge.id, fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : null);
-  };
+  }
 
   clickEdge := (event: MouseEvent, edge: Edge) => {
     if (suppressedEdgeClick?.edgeId is edge.id and performance.now() <= suppressedEdgeClick.expires) {
-      suppressedEdgeClick = null;
-      return;
+      suppressedEdgeClick = null
+      return
     }
-    suppressedEdgeClick = null;
+    suppressedEdgeClick = null
     interactWithEdge(event, edge);
-  };
+  }
 
   cycleEdge := (edge: Edge) => {
-    current := directions()[edge.id];
+    current := directions()[edge.id]
     setEdge(edge.id, current === null ? 1 : current is 1 ? 0 : null);
-  };
+  }
 
   applyForcedAt := (vertex: Vertex) => {
-    forced := analyses()[vertex.id].forced;
-    if forced.size is 0 then return;
+    forced := analyses()[vertex.id].forced
+    if forced.size is 0 then return
     commitDirections((current) => {
-      next := { ...current };
-      forced.forEach((direction, edgeId) => { next[edgeId] = direction; });
-      return next;
+      next := { ...current }
+      forced.forEach((direction, edgeId) => { next[edgeId] = direction; })
+      return next
     });
-  };
+  }
 
   applyAllForced := => {
-    currentAnalyses := analyses();
+    currentAnalyses := analyses()
     commitDirections((current) => {
-      next := { ...current };
+      next := { ...current }
       for (const vertex of selectedGraph().vertices) {
-        analysis := currentAnalyses[vertex.id];
-        if (analysis.state is not "forced") continue;
-        analysis.forced.forEach((direction, edgeId) => { next[edgeId] = direction; });
+        analysis := currentAnalyses[vertex.id]
+        if (analysis.state is not "forced") continue
+        analysis.forced.forEach((direction, edgeId) => { next[edgeId] = direction; })
       }
-      return next;
+      return next
     });
-  };
+  }
 
   endpointCandidatesNear := (point: Point, allowedEdgeIds?: Set<string>) => {
-    const candidates: DragCandidate[] = [];
+    const candidates: DragCandidate[] = []
     for (const edge of selectedGraph().edges) {
-      if (allowedEdgeIds and not allowedEdgeIds.has(edge.id)) continue;
+      if (allowedEdgeIds and not allowedEdgeIds.has(edge.id)) continue
       edge.ends.forEach((end, index) => {
-        endpoint := endpointPoint(selectedGraph(), end);
-        distance := Math.hypot(endpoint.x - point.x, endpoint.y - point.y);
+        endpoint := endpointPoint(selectedGraph(), end)
+        distance := Math.hypot(endpoint.x - point.x, endpoint.y - point.y)
         if (distance <= ENDPOINT_DRAG_RADIUS) {
           candidates.push({ edge, fraction: index, distance, source: "endpoint" });
         }
-      });
+      })
     }
-    return candidates.sort((first, second) => first.distance - second.distance);
-  };
+    return candidates.sort((first, second) => first.distance - second.distance)
+  }
 
   pathForEdge := (edgeId: string) => {
-    return graphCanvas?.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${edgeId}"]`) ?? null;
-  };
+    return graphCanvas?.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${edgeId}"]`) ?? null
+  }
 
   dragCandidatesAt := (event: PointerEvent, allowedEdgeIds?: Set<string>) => {
     return [] unless graphCanvas
-    point := eventPoint(event, graphCanvas);
-    candidates := endpointCandidatesNear(point, allowedEdgeIds);
-    targetPath := ((event.target as Element | null)?.closest?.(".edge-hit") ?? null) as SVGPathElement | null;
-    targetEdgeId := targetPath?.dataset.edgeId;
-    visited := new Set<string>();
+    point := eventPoint(event, graphCanvas)
+    candidates := endpointCandidatesNear(point, allowedEdgeIds)
+    targetPath := ((event.target as Element | null)?.closest?.(".edge-hit") ?? null) as SVGPathElement | null
+    targetEdgeId := targetPath?.dataset.edgeId
+    visited := new Set<string>()
 
     if (targetPath and targetEdgeId and (not allowedEdgeIds or allowedEdgeIds.has(targetEdgeId))) {
-      edge := selectedGraph().edges.find(({ id }) => id is targetEdgeId);
+      edge := selectedGraph().edges.find(({ id }) => id is targetEdgeId)
       if edge
-        location := closestPathLocation(targetPath, point);
-        candidates.push({ edge, ...location, source: "edge" });
-        visited.add(edge.id);
+        location := closestPathLocation(targetPath, point)
+        candidates.push { edge, ...location, source: "edge" }
+        visited.add edge.id
     }
 
     if (allowedEdgeIds) {
       for edgeId of allowedEdgeIds
-        if (visited.has(edgeId)) continue;
-        edge := selectedGraph().edges.find(({ id }) => id is edgeId);
-        path := pathForEdge(edgeId);
-        if (not edge or not path or path.getTotalLength !<? "function") continue;
-        location := closestPathLocation(path, point);
+        if (visited.has(edgeId)) continue
+        edge := selectedGraph().edges.find(({ id }) => id is edgeId)
+        path := pathForEdge(edgeId)
+        if (not edge or not path or path.getTotalLength !<? "function") continue
+        location := closestPathLocation(path, point)
         if location.distance <= EDGE_HIT_RADIUS
           candidates.push({ edge, ...location, source: "edge" });
     }
-    return candidates;
-  };
+    return candidates
+  }
 
   resolveDrag := (event: PointerEvent) => {
-    drag := activeDrag;
+    drag := activeDrag
     return null unless drag
-    allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id));
-    endCandidates := dragCandidatesAt(event, allowed);
-    let best: { edge: Edge; direction: 0 | 1; score: number } | null = null;
+    allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id))
+    endCandidates := dragCandidatesAt(event, allowed)
+    let best: { edge: Edge; direction: 0 | 1; score: number } | null = null
     for (const start of drag.startCandidates) {
       for end of endCandidates
         continue unless start.edge.id is end.edge.id
@@ -525,255 +520,255 @@ export function Visualizer()
           end.fraction,
           drag.startPoint,
           { x: event.clientX, y: event.clientY }
-        );
-        if (direction === null) continue;
-        specificity := Number(start.source is "edge") + Number(end.source is "edge");
-        unoriented := directions()[start.edge.id] === null ? 1 : 0;
-        progress := Math.abs(end.fraction - start.fraction);
-        score := specificity * 10000 + unoriented * 100 + progress * 10 - start.distance - end.distance;
-        if (not best or score > best.score) best = { start.edge, direction, score };
+        )
+        if (direction === null) continue
+        specificity := Number(start.source is "edge") + Number(end.source is "edge")
+        unoriented := directions()[start.edge.id] === null ? 1 : 0
+        progress := Math.abs(end.fraction - start.fraction)
+        score := specificity * 10000 + unoriented * 100 + progress * 10 - start.distance - end.distance
+        if (not best or score > best.score) best = { start.edge, direction, score }
     }
-    return best;
-  };
+    return best
+  }
 
   resolveSameEdgeZone := (event: PointerEvent) => {
-    drag := activeDrag;
+    drag := activeDrag
     return null unless drag
-    allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id));
-    endCandidates := dragCandidatesAt(event, allowed);
-    let best: { edge: Edge; zone: 0 | 1 | 2; score: number } | null = null;
+    allowed := new Set(drag.startCandidates.map(({ edge }) => edge.id))
+    endCandidates := dragCandidatesAt(event, allowed)
+    let best: { edge: Edge; zone: 0 | 1 | 2; score: number } | null = null
     for (const start of drag.startCandidates) {
-      if (drag.startEdgeId and start.edge.id is not drag.startEdgeId) continue;
+      if (drag.startEdgeId and start.edge.id is not drag.startEdgeId) continue
       for end of endCandidates
         continue unless start.edge.id is end.edge.id
-        zone := edgeZone(start.fraction);
-        if (zone is not edgeZone(end.fraction)) continue;
-        specificity := Number(start.source is "edge") + Number(end.source is "edge");
-        score := specificity * 10000 - start.distance - end.distance;
-        if (not best or score > best.score) best = { start.edge, zone, score };
+        zone := edgeZone(start.fraction)
+        if (zone is not edgeZone(end.fraction)) continue
+        specificity := Number(start.source is "edge") + Number(end.source is "edge")
+        score := specificity * 10000 - start.distance - end.distance
+        if (not best or score > best.score) best = { start.edge, zone, score }
     }
-    return best;
-  };
+    return best
+  }
 
   endsNearStartVertex := (event: PointerEvent) => {
-    vertexId := activeDrag?.startVertexId;
-    vertex := vertexId and selectedGraph().vertices.find(({ id }) => id is vertexId);
-    if (not vertex or not graphCanvas) return false;
-    point := eventPoint(event, graphCanvas);
-    return Math.hypot(vertex.x - point.x, vertex.y - point.y) <= ENDPOINT_DRAG_RADIUS;
-  };
+    vertexId := activeDrag?.startVertexId
+    vertex := vertexId and selectedGraph().vertices.find(({ id }) => id is vertexId)
+    if (not vertex or not graphCanvas) return false
+    point := eventPoint(event, graphCanvas)
+    return Math.hypot(vertex.x - point.x, vertex.y - point.y) <= ENDPOINT_DRAG_RADIUS
+  }
 
   beginDrag := (event: PointerEvent) => {
-    if activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas then return;
-    candidates := dragCandidatesAt(event);
-    startVertex := (event.target as Element | null)?.closest?.("[data-vertex-id]") as SVGGElement | null;
-    startVertexId := startVertex?.dataset.vertexId;
+    if activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas then return
+    candidates := dragCandidatesAt(event)
+    startVertex := (event.target as Element | null)?.closest?.("[data-vertex-id]") as SVGGElement | null
+    startVertexId := startVertex?.dataset.vertexId
     filtered := startVertexId
       ? candidates.filter(({ edge, fraction, source }) => {
-          if (source is not "endpoint") return false;
-          end := edge.ends[fraction as 0 | 1];
-          return "vertex" in end and end.vertex is startVertexId;
+          if (source is not "endpoint") return false
+          end := edge.ends[fraction as 0 | 1]
+          return "vertex" in end and end.vertex is startVertexId
         })
-      : candidates;
-    if filtered# is 0 then return;
-    startPath := (event.target as Element | null)?.closest?.(".edge-hit") as SVGPathElement | null;
+      : candidates
+    if filtered# is 0 then return
+    startPath := (event.target as Element | null)?.closest?.(".edge-hit") as SVGPathElement | null
     activeDrag = {
       event.pointerId,
       startCandidates: filtered,
       startPoint: { x: event.clientX, y: event.clientY },
       startEdgeId: startPath?.dataset.edgeId,
       startVertexId
-    };
+    }
     try {
       graphCanvas.setPointerCapture(event.pointerId);
     } catch {
       // Pointer capture is an enhancement; the gesture can still finish over the canvas.
     }
-  };
+  }
 
   trackDrag := (event: PointerEvent) => {
-    drag := activeDrag;
+    drag := activeDrag
     if (drag?.pointerId is event.pointerId) {
-      event.preventDefault();
+      event.preventDefault()
       if endsNearStartVertex(event)
-        setHovered(null);
-        return;
-      sameZone := resolveSameEdgeZone(event);
+        setHovered null
+        return
+      sameZone := resolveSameEdgeZone(event)
       if sameZone
-        setHovered({ edge: sameZone.edge.id, sameZone.zone });
-        return;
-      resolution := resolveDrag(event);
-      setHovered(resolution ? { edge: resolution.edge.id, zone: resolution.direction } : null);
-      return;
+        setHovered { edge: sameZone.edge.id, sameZone.zone }
+        return
+      resolution := resolveDrag(event)
+      setHovered(resolution ? { edge: resolution.edge.id, zone: resolution.direction } : null)
+      return
     }
-    path := (event.target as Element | null)?.closest?.(".edge-hit") as SVGPathElement | null;
-    edge := path and selectedGraph().edges.find(({ id }) => id is path.dataset.edgeId);
+    path := (event.target as Element | null)?.closest?.(".edge-hit") as SVGPathElement | null
+    edge := path and selectedGraph().edges.find(({ id }) => id is path.dataset.edgeId)
     if (not path or not edge or not graphCanvas) {
-      setHovered(null);
-      return;
+      setHovered null
+      return
     }
-    fraction := closestFraction(path, eventPoint(event, graphCanvas));
+    fraction := closestFraction(path, eventPoint(event, graphCanvas))
     setHovered({ edge: edge.id, zone: edgeZone(fraction) });
-  };
+  }
 
   finishDrag := (event: PointerEvent) => {
-    drag := activeDrag;
-    if (not drag or drag.pointerId is not event.pointerId or not graphCanvas) return;
-    sameVertex := endsNearStartVertex(event);
-    sameZone := sameVertex ? null : resolveSameEdgeZone(event);
-    resolution := resolveDrag(event);
+    drag := activeDrag
+    if (not drag or drag.pointerId is not event.pointerId or not graphCanvas) return
+    sameVertex := endsNearStartVertex(event)
+    sameZone := sameVertex ? null : resolveSameEdgeZone(event)
+    resolution := resolveDrag(event)
     moved := Math.hypot(
       event.clientX - drag.startPoint.x,
       event.clientY - drag.startPoint.y
-    ) >= ENDPOINT_DRAG_MINIMUM_PIXELS;
-    activeDrag = null;
+    ) >= ENDPOINT_DRAG_MINIMUM_PIXELS
+    activeDrag = null
     try {
-      graphCanvas.releasePointerCapture(event.pointerId);
+      graphCanvas.releasePointerCapture event.pointerId
     } catch {
       // The browser may already have released capture.
     }
-    setHovered(null);
+    setHovered null
     if (sameVertex) {
-      event.preventDefault();
-      vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId);
-      if (vertex) applyForcedAt(vertex);
+      event.preventDefault()
+      vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId)
+      if (vertex) applyForcedAt(vertex)
       if drag.startVertexId
-        suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 };
-      return;
+        suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
+      return
     }
     if (sameZone) {
-      event.preventDefault();
-      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 };
-      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 };
-      setEdge(sameZone.edge.id, sameZone.zone is 2 ? null : sameZone.zone);
+      event.preventDefault()
+      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
+      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
+      setEdge(sameZone.edge.id, sameZone.zone is 2 ? null : sameZone.zone)
       return;
     }
     if (moved) {
-      event.preventDefault();
-      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 };
-      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 };
-      if (resolution) setEdge(resolution.edge.id, resolution.direction);
+      event.preventDefault()
+      if (drag.startEdgeId) suppressedEdgeClick = { edgeId: drag.startEdgeId, expires: performance.now() + 750 }
+      if (drag.startVertexId) suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 }
+      if (resolution) setEdge(resolution.edge.id, resolution.direction)
       return;
     }
-    event.preventDefault();
+    event.preventDefault()
     if (drag.startEdgeId) {
       candidate := drag.startCandidates.find(({ edge, source }) => {
-        return edge.id is drag.startEdgeId and source is "edge";
-      });
+        return edge.id is drag.startEdgeId and source is "edge"
+      })
       if candidate
-        zone := edgeZone(candidate.fraction);
-        setEdge(candidate.edge.id, zone is 2 ? null : zone);
+        zone := edgeZone(candidate.fraction)
+        setEdge(candidate.edge.id, zone is 2 ? null : zone)
         suppressedEdgeClick = { edgeId: candidate.edge.id, expires: performance.now() + 750 };
     } else if (drag.startVertexId) {
-      vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId);
-      if (vertex) applyForcedAt(vertex);
+      vertex := selectedGraph().vertices.find(({ id }) => id is drag.startVertexId)
+      if (vertex) applyForcedAt(vertex)
       suppressedVertexClick = { vertexId: drag.startVertexId, expires: performance.now() + 750 };
     }
-  };
+  }
 
   cancelDrag := (event: PointerEvent) => {
     if (activeDrag?.pointerId is event.pointerId) {
       activeDrag = null;
       setHovered(null);
     }
-  };
+  }
 
   reserveTouchStart := (event: TouchEvent) => {
-    touch := event.touches?.[0];
+    touch := event.touches?.[0]
     nearEndpoint := touch and graphCanvas and endpointCandidatesNear(eventPoint(
       { touch.{clientX,clientY} } as PointerEvent,
       graphCanvas
-    ))# > 0;
+    ))# > 0
     if (activeDrag !== null or nearEndpoint) event.preventDefault();
-  };
+  }
 
   reserveActiveTouch := (event: TouchEvent) => {
     if (activeDrag !== null) event.preventDefault();
-  };
+  }
 
   clickVertex := (vertex: Vertex) => {
     if (suppressedVertexClick?.vertexId is vertex.id and performance.now() <= suppressedVertexClick.expires) {
-      suppressedVertexClick = null;
-      return;
+      suppressedVertexClick = null
+      return
     }
-    suppressedVertexClick = null;
+    suppressedVertexClick = null
     applyForcedAt(vertex);
-  };
+  }
 
   stateSummary := => {
-    current := progress();
-    if (current.solved) return { tone: "success", title: "Solved", text: "Every edge is oriented and every vertex is satisfied." };
+    current := progress()
+    if (current.solved) return { tone: "success", title: "Solved", text: "Every edge is oriented and every vertex is satisfied." }
     if (current.impossible > 0) return {
       tone: "danger",
       title: "Contradiction",
       text: contradictionSummary(current.violated, current.incompleteImpossible)
-    };
+    }
     if (current.edgeConflicts > 0) return {
       tone: "danger",
       title: "Forced conflict",
       text: "Two neighboring vertices require an unoriented edge in opposite directions."
-    };
+    }
     if (current.forced > 0) return {
       tone: "hint",
       title: `${current.forced} forced ${current.forced is 1 ? "vertex" : "vertices"}`,
       text: "Dashed arrows show deductions. Click a cyan vertex to apply its forced edges."
-    };
+    }
     return {
       tone: "neutral",
       title: "In progress",
       text: `${current.oriented} of ${selectedGraph().edges.length} edges oriented.`
     };
-  };
+  }
 
-  groups := ["Full graphs", "Paper gadgets"] as const;
+  groups := ["Full graphs", "Paper gadgets"] as const
 
   handleHistoryKeyDown := (event: KeyboardEvent) => {
-    if event.defaultPrevented or event.altKey or (not event.ctrlKey and not event.metaKey) then return;
-    target := event.target;
+    if event.defaultPrevented or event.altKey or (not event.ctrlKey and not event.metaKey) then return
+    target := event.target
     if (
       target instanceof HTMLInputElement or
       target instanceof HTMLTextAreaElement or
       (target instanceof HTMLElement and target.isContentEditable)
-    ) return;
-    key := event.key.toLowerCase();
-    action := key is "z" ? (event.shiftKey ? redo : undo) : key is "y" ? redo : null;
-    if (not action or (action is undo ? not canUndo() : not canRedo())) return;
-    event.preventDefault();
+    ) return
+    key := event.key.toLowerCase()
+    action := key is "z" ? (event.shiftKey ? redo : undo) : key is "y" ? redo : null
+    if (not action or (action is undo ? not canUndo() : not canRedo())) return
+    event.preventDefault()
     action();
-  };
+  }
 
-  window.addEventListener("keydown", handleHistoryKeyDown);
-  onCleanup(=> window.removeEventListener("keydown", handleHistoryKeyDown));
+  window.addEventListener "keydown", handleHistoryKeyDown
+  onCleanup => window.removeEventListener("keydown", handleHistoryKeyDown)
 
   createEffect(=> {
     document.documentElement.dataset.theme = theme();
-  });
+  })
 
   toggleTheme := => {
-    next := theme() is "dark" ? "light" : "dark";
-    setTheme(next);
+    next := theme() is "dark" ? "light" : "dark"
+    setTheme next
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // The toggle still works for this page when storage is unavailable.
     }
-  };
+  }
 
   downloadSvg := => {
     return unless graphCanvas
     blob := new Blob([serializeGraphSvg(graphCanvas, theme())], {
       type: "image/svg+xml;charset=utf-8"
-    });
-    url := URL.createObjectURL(blob);
-    link := document.createElement("a");
-    link.href = url;
-    link.download = `${selectedGraph().id}.svg`;
-    link.hidden = true;
-    document.body.append(link);
-    link.click();
-    link.remove();
+    })
+    url := URL.createObjectURL(blob)
+    link := document.createElement("a")
+    link.href = url
+    link.download = `${selectedGraph().id}.svg`
+    link.hidden = true
+    document.body.append link
+    link.click()
+    link.remove()
     window.setTimeout(=> URL.revokeObjectURL(url), 0);
-  };
+  }
 
   return (
     <div .app-shell>
@@ -900,10 +895,10 @@ export function Visualizer()
 
               <g .edge-layer>
                 <For each={selectedGraph().edges}>{(edge) => {
-                  geometry := => { return edgeGeometry(selectedGraph(), edge); };
-                  direction := => { return directions()[edge.id] ?? null; };
-                  forced := => { return forcedEdges()[edge.id] ?? { direction: null, conflict: false }; };
-                  hover := => { return hovered()?.edge is edge.id ? hovered()?.zone : undefined; };
+                  geometry := => { return edgeGeometry(selectedGraph(), edge); }
+                  direction := => { return directions()[edge.id] ?? null; }
+                  forced := => { return forcedEdges()[edge.id] ?? { direction: null, conflict: false }; }
+                  hover := => { return hovered()?.edge is edge.id ? hovered()?.zone : undefined; }
                   return (
                     <g class={`edge-group${forced().conflict ? " edge-group--conflict" : ""}${hover() is not undefined ? " edge-group--previewing" : ""}`}>
                       <g .edge-visual>
@@ -959,34 +954,34 @@ export function Visualizer()
                     forced: new Map<string, 0 | 1>(),
                     assignedPorts: 0,
                     totalPorts: 0
-                  }; };
-                  clickable := => { return analysis().state is "forced"; };
+                  }; }
+                  clickable := => { return analysis().state is "forced"; }
                   vertexName := => {
-                    name := vertex.annotation?.text ?? vertex.label;
-                    return name is undefined ? undefined : plainLabel(name);
-                  };
-                  interiorLabel := => { return vertex.label ?? vertex.constraint.shortLabel; };
+                    name := vertex.annotation?.text ?? vertex.label
+                    return name is undefined ? undefined : plainLabel(name)
+                  }
+                  interiorLabel := => { return vertex.label ?? vertex.constraint.shortLabel; }
                   annotation := => {
                     return null unless vertex.annotation
-                    corner := vertex.annotation.corner ?? "top-right";
-                    right := corner.endsWith("right");
-                    bottom := corner.startsWith("bottom");
+                    corner := vertex.annotation.corner ?? "top-right"
+                    right := corner.endsWith("right")
+                    bottom := corner.startsWith("bottom")
                     return {
                       ...vertex.annotation,
                       x: (right ? 1 : -1) * (NODE_RADIUS + 4),
                       y: (bottom ? 1 : -1) * (NODE_RADIUS + 4),
                       anchor: (right ? "start" : "end") as "start" | "end"
                     };
-                  };
+                  }
                   portLabels := => {
-                    groups := vertex.constraint.portGroups;
+                    groups := vertex.constraint.portGroups
                     return [] unless groups
                     return incidencesAt(selectedGraph(), vertex.id).map((incidence) => {
-                      geometry := edgeGeometry(selectedGraph(), incidence.edge);
-                      endpoint := incidence.endIndex is 0 ? geometry.start : geometry.end;
-                      direction := unit({ x: endpoint.x - vertex.x, y: endpoint.y - vertex.y });
-                      radius := NODE_RADIUS - 8;
-                      group := groups[incidence.port];
+                      geometry := edgeGeometry(selectedGraph(), incidence.edge)
+                      endpoint := incidence.endIndex is 0 ? geometry.start : geometry.end
+                      direction := unit({ x: endpoint.x - vertex.x, y: endpoint.y - vertex.y })
+                      radius := NODE_RADIUS - 8
+                      group := groups[incidence.port]
                       return {
                         group,
                         label: group is 0 ? "+" : "−",
@@ -994,7 +989,7 @@ export function Visualizer()
                         y: direction.y * radius
                       };
                     });
-                  };
+                  }
                   return (
                     <g
                       class={`vertex vertex--${analysis().state}${clickable() ? " vertex--clickable" : ""}`}
