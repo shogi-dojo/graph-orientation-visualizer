@@ -819,8 +819,10 @@ export function Visualizer()
               <g .edge-layer>
                 <For each={selectedGraph().edges}>{(edge) =>
                   function geometry() { edgeGeometry(selectedGraph(), edge) }
-                  direction := => { return directions()[edge.id] ?? null; }
-                  forced := => { return forcedEdges()[edge.id] ?? { direction: null, conflict: false }; }
+                  direction := =>
+                    directions()[edge.id] ?? null
+                  forced := =>
+                    forcedEdges()[edge.id] ?? { direction: null, conflict: false }
                   function hover() { hovered()?.edge is edge.id ? hovered()?.zone : undefined }
                   (
                     <g class={`edge-group${forced().conflict ? " edge-group--conflict" : ""}${hover() is not undefined ? " edge-group--previewing" : ""}`}>
@@ -870,13 +872,14 @@ export function Visualizer()
 
               <g .vertex-layer>
                 <For each={selectedGraph().vertices}>{(vertex) =>
-                  analysis := => { return analyses()[vertex.id] ?? {
-                    state: "open" as const
-                    compatible: []
-                    forced: new Map<string, 0 | 1>()
-                    assignedPorts: 0
-                    totalPorts: 0
-                  }; }
+                  analysis := =>
+                    analyses()[vertex.id] ?? {
+                      state: "open" as const
+                      compatible: []
+                      forced: new Map<string, 0 | 1>()
+                      assignedPorts: 0
+                      totalPorts: 0
+                    }
                   function clickable() { analysis().state is "forced" }
                   function vertexName()
                     name := vertex.annotation?.text ?? vertex.label
