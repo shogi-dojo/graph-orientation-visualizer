@@ -98,15 +98,15 @@ export function relationConstraint(
     allowed: bitPatterns.map((pattern) =>
       if pattern# is not degree or /[^01]/.test(pattern)
         throw new Error(`Invalid ${name} bit pattern: ${pattern}`)
-      return [...pattern].reduce(
+      [...pattern].reduce(
         (mask, value, port) => mask | (Number(value) << port)
         0
-      );
+      )
     )
   };
 
 export function emptyDirections(graph: GraphDefinition): Record<string, EdgeDirection>
-  return Object.fromEntries(graph.edges.map((edge) => [edge.id, null]))
+  Object.fromEntries graph.edges.map((edge) => [edge.id, null])
 
 export function incidencesAt(graph: GraphDefinition, vertexId: string): Incidence[]
   incidences: Incidence[] := []
@@ -115,10 +115,10 @@ export function incidencesAt(graph: GraphDefinition, vertexId: string): Incidenc
       if "vertex" in end and end.vertex is vertexId
         incidences.push({ edge, endIndex: index as 0 | 1, end.port });
     )
-  return incidences.sort((a, b) => a.port - b.port)
+  incidences.sort((a, b) => a.port - b.port)
 
 function bitAt(pattern: number, port: number): 0 | 1
-  return ((pattern >> port) & 1) as 0 | 1
+  ((pattern >> port) & 1) as 0 | 1
 
 export function analyzeVertex(
   graph: GraphDefinition
@@ -137,7 +137,7 @@ export function analyzeVertex(
       local := incidences.filter((incidence) => incidence.edge.id is edge.id)
       if local# is 2 and directions[edge.id] === null
         if bitAt(pattern, local[0].port) is bitAt(pattern, local[1].port) then return false
-    return true
+    true
   )
 
   forced := new Map<string, 0 | 1>()
@@ -196,4 +196,4 @@ export function validateGraph(graph: GraphDefinition): string[]
       errors.push `${vertex.id} ports must be numbered 0 through ${vertex.constraint.degree - 1}`
     if vertex.constraint.portGroups and vertex.constraint.portGroups# is not vertex.constraint.degree
       errors.push `${vertex.id} must assign a group to every port`
-  return errors
+  errors

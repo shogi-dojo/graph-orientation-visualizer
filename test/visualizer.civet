@@ -80,7 +80,7 @@ describe "example selection", =>
           x: 0
           y: 0
           matrixTransform: => ({ point.{x,y} })
-        return point
+        point
     })
     Object.defineProperty path, "getTotalLength", { configurable: true, value: => 100 }
     Object.defineProperty(path, "getPointAtLength", {
@@ -156,7 +156,7 @@ describe "example selection", =>
           x: 0
           y: 0
           matrixTransform: => ({ point.{x,y} })
-        return point
+        point
     })
     a := root.querySelector<SVGGElement>('[data-vertex-id="a"]')!
     b := root.querySelector<SVGGElement>('[data-vertex-id="b"]')!
@@ -366,7 +366,7 @@ describe "example selection", =>
     dispose = render(=> <Visualizer />, root)
 
     edge := (id: string) =>
-      return root.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${id}"]`)!
+      root.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${id}"]`)!
     edge("ab").dispatchEvent new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
 
     apply := root.querySelector<HTMLButtonElement>(".state-card__apply")!

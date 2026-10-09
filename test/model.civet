@@ -60,14 +60,14 @@ function satisfyingAssignments(graph: GraphDefinition)
     directions[edge.id] = null;
 
   search 0
-  return solutions
+  solutions
 
 function boundaryMask(graph: GraphDefinition, directions: Record<string, 0 | 1>)
   boundary := graph.edges.filter((edge) => edge.ends.some((end) => not ("vertex" in end)))
-  return boundary.reduce((mask, edge, index) =>
+  boundary.reduce((mask, edge, index) =>
     internalIndex := edge.ends.findIndex((end) => "vertex" in end) as 0 | 1
-    return mask | (Number(directions[edge.id] is internalIndex) << index)
-  , 0);
+    mask | (Number(directions[edge.id] is internalIndex) << index)
+  , 0)
 
 describe "example suite", =>
   it.each(EXAMPLES.filter(({ id }) => id is not "all-equalizer-k4").map((example) => [example.title, example] as const))(

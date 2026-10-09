@@ -65,13 +65,13 @@ export function parseLabelMarkup(label: string): LabelPart[]
     parts.push { text: match[1], italic: true }
     cursor = match.index + match[0]#
   if cursor < label# then parts.push({ text: label[>=cursor], italic: false })
-  return parts# ? parts : [{ text: label, italic: false }]
+  parts# ? parts : [{ text: label, italic: false }]
 
 function plainLabel(label: string)
-  return parseLabelMarkup(label).map(({ text }) => text).join("")
+  parseLabelMarkup(label).map(({ text }) => text).join ""
 
 export function platformUsesCommandKey(platform: string)
-  return /mac|iphone|ipad|ipod/i.test(platform)
+  /mac|iphone|ipad|ipod/i.test platform
 
 export function contradictionSummary(violated: number, incomplete: number)
   messages: string[] := []
@@ -79,11 +79,11 @@ export function contradictionSummary(violated: number, incomplete: number)
     messages.push `${violated} ${violated is 1 ? "vertex is" : "vertices are"} violated.`
   if incomplete > 0
     messages.push `${incomplete} ${incomplete is 1 ? "vertex has" : "vertices have"} no possible completion.`
-  return messages.join(" ")
+  messages.join " "
 
 function detectedPlatform()
   userAgentData := (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-  return userAgentData?.platform or navigator.platform or navigator.userAgent
+  userAgentData?.platform or navigator.platform or navigator.userAgent
 
 export function serializeGraphSvg(source: SVGSVGElement, theme: Theme): string
   svg := source.cloneNode(true) as SVGSVGElement
@@ -114,14 +114,14 @@ initialTheme := : Theme =>
   catch {
     // Storage can be unavailable in privacy-restricted contexts.
   }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
 function endpointPoint(graph: GraphDefinition, end: EdgeEnd): Point
   if "vertex" in end
     vertex := graph.vertices.find(({ id }) => id is end.vertex)
     throw new Error(`Missing vertex ${end.vertex}`) unless vertex
     return { vertex.{x,y} }
-  return end
+  end
 
 function unit(point: Point): Point
   length := Math.hypot(point.x, point.y) or 1
@@ -165,7 +165,7 @@ function edgeGeometry(graph: GraphDefinition, edge: Edge)
   function path(pathPoints: Point[])
     return `M ${pathPoints.map(({ x, y }) => `${x} ${y}`).join(" L ")}`
   lengths := points.slice(1).map((point, index) =>
-    return Math.hypot(point.x - points[index].x, point.y - points[index].y)
+    Math.hypot point.x - points[index].x, point.y - points[index].y
   )
   halfway := lengths.reduce((sum, length) => sum + length, 0) / 2
   traversed .= 0
@@ -222,10 +222,10 @@ function closestPathLocation(path: SVGPathElement, point: Point)
   return { fraction: bestFraction, distance: Math.sqrt(bestDistance) }
 
 function closestFraction(path: SVGPathElement, point: Point): number
-  return closestPathLocation(path, point).fraction
+  closestPathLocation(path, point).fraction
 
 function edgeZone(fraction: number): 0 | 1 | 2
-  return fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : 2
+  fraction < 1 / 3 ? 0 : fraction > 2 / 3 ? 1 : 2
 
 export function edgeSwipeDirection(
   startFraction: number
@@ -236,11 +236,11 @@ export function edgeSwipeDirection(
   distance := Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y)
   progress := endFraction - startFraction
   if distance < EDGE_SWIPE_MINIMUM_PIXELS or Math.abs(progress) < EDGE_SWIPE_MINIMUM_FRACTION then return null
-  return progress > 0 ? 1 : 0
+  progress > 0 ? 1 : 0
 
 function directionLabel(edge: Edge, direction: 0 | 1): string
   end := edge.ends[direction]
-  return "vertex" in end ? `toward ${end.vertex}` : "toward the dangling end"
+  "vertex" in end ? `toward ${end.vertex}` : "toward the dangling end"
 
 function constraintRule(constraint: Constraint): string
   exact := /^(\d+)-in-(\d+)$/.exec(constraint.name)
@@ -251,7 +251,7 @@ function constraintRule(constraint: Constraint): string
     return "The + ports agree, the − ports agree, and the two pairs are opposite"
   if constraint.name is "6-alternator"
     return "Neighboring ports alternate inward and outward"
-  return constraint.name
+  constraint.name
 
 export function Visualizer()
   let graphCanvas: SVGSVGElement?
@@ -283,13 +283,13 @@ export function Visualizer()
       group := grouped.get(key) ?? { vertex.constraint, labels: new Set<string>() }
       group.labels.add(vertex.label) if vertex.label
       grouped.set key, group
-    return [...grouped.values()].map(({ constraint, labels }) =>
+    [...grouped.values()].map(({ constraint, labels }) =>
       visibleLabels := [...labels]
       symbol := visibleLabels# is 0
         ? constraint.shortLabel
         : `${visibleLabels.slice(0, 2).join(", ")}${visibleLabels.length > 2 ? ", …" : ""}`
       return { symbol, rule: constraintRule(constraint) }
-    );
+    )
   )
 
   analyses := createMemo(=> Object.fromEntries(
@@ -309,7 +309,7 @@ export function Visualizer()
       result[edge.id] =
         direction: implied.size is 1 ? [...implied][0] : null
         conflict: implied.size > 1
-    return result
+    result
   )
 
   progress := createMemo(=>
@@ -317,7 +317,7 @@ export function Visualizer()
     oriented := Object.values(directions()).filter((direction) => direction !== null)#
     impossible := values.filter(({ state }) => state is "impossible")#
     violated := values.filter(({ state, assignedPorts, totalPorts }) =>
-      return state is "impossible" and assignedPorts is totalPorts
+      state is "impossible" and assignedPorts is totalPorts
     )#
     incompleteImpossible := impossible - violated
     satisfied := values.filter(({ state }) => state is "satisfied")#
@@ -329,7 +329,7 @@ export function Visualizer()
 
   function directionsEqual(first: DirectionState, second: DirectionState)
     keys := Object.keys(first)
-    return keys# is Object.keys(second)# and keys.every((key) => first[key] is second[key])
+    keys# is Object.keys(second)# and keys.every((key) => first[key] is second[key])
 
   function commitDirections(update: DirectionUpdate)
     current := directions()
@@ -398,7 +398,7 @@ export function Visualizer()
     commitDirections((current) =>
       next := { ...current }
       forced.forEach((direction, edgeId) => { next[edgeId] = direction; })
-      return next
+      next
     );
 
   function applyAllForced()
@@ -409,7 +409,7 @@ export function Visualizer()
         analysis := currentAnalyses[vertex.id]
         if (analysis.state is not "forced") continue
         analysis.forced.forEach((direction, edgeId) => { next[edgeId] = direction; })
-      return next
+      next
     );
 
   function endpointCandidatesNear(point: Point, allowedEdgeIds?: Set<string>)
@@ -422,10 +422,10 @@ export function Visualizer()
         if distance <= ENDPOINT_DRAG_RADIUS
           candidates.push({ edge, fraction: index, distance, source: "endpoint" });
       )
-    return candidates.sort((first, second) => first.distance - second.distance)
+    candidates.sort((first, second) => first.distance - second.distance)
 
   function pathForEdge(edgeId: string)
-    return graphCanvas?.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${edgeId}"]`) ?? null
+    graphCanvas?.querySelector<SVGPathElement>(`.edge-hit[data-edge-id="${edgeId}"]`) ?? null
 
   function dragCandidatesAt(event: PointerEvent, allowedEdgeIds?: Set<string>)
     return [] unless graphCanvas
@@ -451,7 +451,7 @@ export function Visualizer()
         location := closestPathLocation(path, point)
         if location.distance <= EDGE_HIT_RADIUS
           candidates.push { edge, ...location, source: "edge" }
-    return candidates
+    candidates
 
   function resolveDrag(event: PointerEvent)
     drag := activeDrag
@@ -474,7 +474,7 @@ export function Visualizer()
         progress := Math.abs(end.fraction - start.fraction)
         score := specificity * 10000 + unoriented * 100 + progress * 10 - start.distance - end.distance
         if (not best or score > best.score) best = { start.edge, direction, score }
-    return best
+    best
 
   function resolveSameEdgeZone(event: PointerEvent)
     drag := activeDrag
@@ -491,14 +491,14 @@ export function Visualizer()
         specificity := Number(start.source is "edge") + Number(end.source is "edge")
         score := specificity * 10000 - start.distance - end.distance
         if (not best or score > best.score) best = { start.edge, zone, score }
-    return best
+    best
 
   function endsNearStartVertex(event: PointerEvent)
     vertexId := activeDrag?.startVertexId
     vertex := vertexId and selectedGraph().vertices.find(({ id }) => id is vertexId)
     if (not vertex or not graphCanvas) return false
     point := eventPoint(event, graphCanvas)
-    return Math.hypot(vertex.x - point.x, vertex.y - point.y) <= ENDPOINT_DRAG_RADIUS
+    Math.hypot(vertex.x - point.x, vertex.y - point.y) <= ENDPOINT_DRAG_RADIUS
 
   function beginDrag(event: PointerEvent)
     if activeDrag or event.button is not 0 or event.isPrimary is false or not graphCanvas then return
@@ -509,7 +509,7 @@ export function Visualizer()
       ? candidates.filter(({ edge, fraction, source }) => {
           if (source is not "endpoint") return false
           end := edge.ends[fraction as 0 | 1]
-          return "vertex" in end and end.vertex is startVertexId
+          "vertex" in end and end.vertex is startVertexId
         })
       : candidates
     if filtered# is 0 then return
@@ -588,7 +588,7 @@ export function Visualizer()
     event.preventDefault()
     if drag.startEdgeId
       candidate := drag.startCandidates.find(({ edge, source }) =>
-        return edge.id is drag.startEdgeId and source is "edge"
+        edge.id is drag.startEdgeId and source is "edge"
       )
       if candidate
         zone := edgeZone(candidate.fraction)
@@ -693,7 +693,7 @@ export function Visualizer()
     link.remove()
     window.setTimeout(=> URL.revokeObjectURL(url), 0);
 
-  return (
+  (
     <div .app-shell>
       <header .masthead>
         <img .brand-mark src="./favicon.svg" alt="" aria-hidden="true">
@@ -818,11 +818,11 @@ export function Visualizer()
 
               <g .edge-layer>
                 <For each={selectedGraph().edges}>{(edge) =>
-                  function geometry() { return edgeGeometry(selectedGraph(), edge); }
+                  function geometry() { edgeGeometry(selectedGraph(), edge) }
                   direction := => { return directions()[edge.id] ?? null; }
                   forced := => { return forcedEdges()[edge.id] ?? { direction: null, conflict: false }; }
-                  function hover() { return hovered()?.edge is edge.id ? hovered()?.zone : undefined; }
-                  return (
+                  function hover() { hovered()?.edge is edge.id ? hovered()?.zone : undefined }
+                  (
                     <g class={`edge-group${forced().conflict ? " edge-group--conflict" : ""}${hover() is not undefined ? " edge-group--previewing" : ""}`}>
                       <g .edge-visual>
                         <path .edge-base d={geometry().forward}>
@@ -865,7 +865,7 @@ export function Visualizer()
                             setEdge(edge.id, null);
                         }
                       >
-                  );
+                  )
                 }
 
               <g .vertex-layer>
@@ -877,11 +877,11 @@ export function Visualizer()
                     assignedPorts: 0
                     totalPorts: 0
                   }; }
-                  function clickable() { return analysis().state is "forced"; }
+                  function clickable() { analysis().state is "forced" }
                   function vertexName()
                     name := vertex.annotation?.text ?? vertex.label
-                    return name is undefined ? undefined : plainLabel(name)
-                  function interiorLabel() { return vertex.label ?? vertex.constraint.shortLabel; }
+                    name is undefined ? undefined : plainLabel(name)
+                  function interiorLabel() { vertex.label ?? vertex.constraint.shortLabel }
                   annotation := =>
                     return null unless vertex.annotation
                     corner := vertex.annotation.corner ?? "top-right"
@@ -896,7 +896,7 @@ export function Visualizer()
                   function portLabels()
                     groups := vertex.constraint.portGroups
                     return [] unless groups
-                    return incidencesAt(selectedGraph(), vertex.id).map((incidence) =>
+                    incidencesAt(selectedGraph(), vertex.id).map((incidence) =>
                       geometry := edgeGeometry(selectedGraph(), incidence.edge)
                       endpoint := incidence.endIndex is 0 ? geometry.start : geometry.end
                       direction := unit({ x: endpoint.x - vertex.x, y: endpoint.y - vertex.y })
@@ -908,8 +908,8 @@ export function Visualizer()
                         x: direction.x * radius
                         y: direction.y * radius
                       };
-                    );
-                  return (
+                    )
+                  (
                     <g
                       class={`vertex vertex--${analysis().state}${clickable() ? " vertex--clickable" : ""}`}
                       data-vertex-id=vertex.id
@@ -962,7 +962,7 @@ export function Visualizer()
                         <g .vertex-badge><circle cx="23" cy="-23" r="10" /><text x="23" y="-22" text-anchor="middle" dominant-baseline="central">✓</text></g>
                       <Show when={analysis().state is "impossible"}>
                         <g .vertex-badge><circle cx="23" cy="-23" r="10" /><text x="23" y="-22" text-anchor="middle" dominant-baseline="central">!</text></g>
-                  );
+                  )
                 }
             <Show when={progress().solved}>
               <div .victory-toast role="status"><span>✓</span> Orientation complete</div>
@@ -999,4 +999,4 @@ export function Visualizer()
                 <span><kbd>Command</kbd>+<kbd>Z</kbd> undo, <kbd>Command</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</span>
             <button .download-button type="button" onClick=downloadSvg>
               <span aria-hidden="true">↓</span> Download SVG
-  );
+  )

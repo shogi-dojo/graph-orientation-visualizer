@@ -48,7 +48,7 @@ function figure4Point(column: number, row: number)
     y: 1020 - FIGURE_4_GRID_SIZE * row
   };
 function figure4Route(...points: [number, number][])
-  return points.map(([column, row]) => figure4Point(column, row))
+  points.map(([column, row]) => figure4Point(column, row))
 function figure4Vertex(
   id: string
   column: number
@@ -57,7 +57,7 @@ function figure4Vertex(
   options: Pick<Vertex, "label" | "annotation"> = {}
 )
   { x, y } := figure4Point(column, row)
-  return vertex(id, x, y, constraint, options)
+  vertex id, x, y, constraint, options
 
 examples: GraphDefinition[] := [
   {
@@ -345,11 +345,11 @@ examples: GraphDefinition[] := [
     vertices: [vertex("alt", 400, 280, alternator6)]
     edges: Array.from({ length: 6 }, (_, index) =>
       angle := -Math.PI / 2 + index * Math.PI / 3
-      return edge(
+      edge(
         `ray-${index}`
         port "alt", index
         free(400 + 230 * Math.cos(angle), 280 + 210 * Math.sin(angle))
-      );
+      )
     )
   }
   {
