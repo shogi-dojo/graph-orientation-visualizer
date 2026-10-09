@@ -732,7 +732,7 @@ export function Visualizer()
           <section>
             <label .field-label for="example">Example</label>
             <div .select-wrap>
-              <select #example value={selectedId()} onChange={(event) => chooseExample(event.currentTarget.value)}>
+              <select #example value=selectedId() onChange={(event) => chooseExample(event.currentTarget.value)}>
                 <For each=groups>{(group) => (
                   <optgroup label=group>
                     <For each={EXAMPLES.filter((example) => example.group is group)}>{(example) => (
@@ -752,7 +752,7 @@ export function Visualizer()
             <section .vertex-types>
               <h3>Vertex types</h3>
               <dl .vertex-type-list aria-label="Vertex types in this example">
-                <For each={vertexTypes()}>{({ symbol, rule }) => (
+                <For each=vertexTypes()>{({ symbol, rule }) => (
                   <div .vertex-type>
                     <dt .vertex-type-symbol><span>{symbol}</span></dt>
                     <dd>{rule}
@@ -938,7 +938,7 @@ export function Visualizer()
                         text-anchor="middle"
                         dominant-baseline="central"
                       >{interiorLabel()}
-                      <Show when={annotation()}>{(visibleAnnotation) => (
+                      <Show when=annotation()>{(visibleAnnotation) => (
                         <text
                           .vertex-annotation
                           x={visibleAnnotation().x}
@@ -951,7 +951,7 @@ export function Visualizer()
                             <tspan font-style={part.italic ? "italic" : "normal"}>{part.text}
                           )}
                       )}
-                      <For each={portLabels()}>{(label) => (
+                      <For each=portLabels()>{(label) => (
                         <text
                           class={`port-pair-label port-pair-label--${label.group}`}
                           x=label.x
